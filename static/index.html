@@ -1380,8 +1380,14 @@ details > .detail-body { padding: 8px 0 0 12px; font-size: 12px; color: var(--te
           <span class="home-badge" style="color:var(--purple);border-color:rgba(188,140,255,.4)">Claude-Powered</span>
         </div>
         <div class="home-cta-row">
-          <button class="home-btn-primary" onclick="switchView('pipeline')">⬡ Watch it run →</button>
-          <button class="home-btn-secondary" onclick="switchView('phases')">⊞ Step through phases</button>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:5px">
+            <button class="home-btn-primary" onclick="switchView('pipeline')">⬡ Watch it run →</button>
+            <span style="font-size:11px;color:var(--text-dim);font-style:italic">Agents collaborate live — no clicks needed</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:5px">
+            <button class="home-btn-secondary" onclick="switchView('phases')">⊞ Step through phases</button>
+            <span style="font-size:11px;color:var(--text-dim);font-style:italic">Pause &amp; inspect the data at every step</span>
+          </div>
         </div>
       </div>
 
@@ -1473,8 +1479,8 @@ details > .detail-body { padding: 8px 0 0 12px; font-size: 12px; color: var(--te
             <div class="home-explore-card-top">
               <div class="home-explore-icon">⬡</div>
               <div>
-                <div class="home-explore-title" style="color:var(--blue)">Pipeline View</div>
-                <div style="font-size:11px;color:var(--text-dim)">Cinematic · real-time</div>
+                <div class="home-explore-title" style="color:var(--blue)">Watch it Run</div>
+                <div style="font-size:11px;color:var(--text-dim);margin-top:2px;font-style:italic">See agents collaborate in real time — no clicks needed</div>
               </div>
             </div>
             <div class="home-explore-body">Watch the agent graph come alive — each node spawns as the Orchestrator dispatches it, tool calls stream in live, and the pipeline builds itself top-to-bottom. Best for demos and first impressions.</div>
@@ -1487,8 +1493,8 @@ details > .detail-body { padding: 8px 0 0 12px; font-size: 12px; color: var(--te
             <div class="home-explore-card-top">
               <div class="home-explore-icon">⊞</div>
               <div>
-                <div class="home-explore-title" style="color:var(--green)">Phases View</div>
-                <div style="font-size:11px;color:var(--text-dim)">Detailed · step-through</div>
+                <div class="home-explore-title" style="color:var(--green)">Step Through Phases</div>
+                <div style="font-size:11px;color:var(--text-dim);margin-top:2px;font-style:italic">Pause at each step — inspect the data flowing between agents</div>
               </div>
             </div>
             <div class="home-explore-body">Step through each phase at your own pace and read the full data cards — blast radius stats, similar incident scores, summary narrative, and annotated root cause evidence trail.</div>
@@ -1553,7 +1559,7 @@ details > .detail-body { padding: 8px 0 0 12px; font-size: 12px; color: var(--te
 
       <!-- Back to Home -->
       <div>
-        <button class="back-btn" onclick="switchView('home')">Home</button>
+        <button class="back-btn" onclick="goHome()">Home</button>
       </div>
 
       <!-- Incoming alert feeder bar (phases view) -->
@@ -1827,7 +1833,7 @@ details > .detail-body { padding: 8px 0 0 12px; font-size: 12px; color: var(--te
 
       <!-- Back to Home -->
       <div style="padding:14px 20px 0">
-        <button class="back-btn" onclick="switchView('home')">Home</button>
+        <button class="back-btn" onclick="goHome()">Home</button>
       </div>
 
       <!-- Top action bar: Run (pre-sim) and Re-run (post-sim) live here -->
@@ -2637,7 +2643,7 @@ function _hideAllPipeElements() {
 // ─── View switcher ──────────────────────────────────────────────────────────
 
 /**
- * Switch between home / pipeline / phases tabs.
+ * Switch between home / pipeline / phases views.
  */
 function switchView(view) {
   // Show/hide views
@@ -2652,6 +2658,53 @@ function switchView(view) {
   if (view === 'pipeline' && !_ctx && $('pipeline-run-panel')) {
     $('pipeline-run-panel').style.display = 'flex';
   }
+}
+
+/**
+ * Go back to Home and fully reset both views so the next visit starts fresh.
+ */
+function goHome() {
+  // ── Reset shared state ────────────────────────────────────────────────────
+  _ctx = null;
+  _phase = 0;
+  _pipelinePhase = 0;
+  _pipelineAnimating = false;
+
+  // ── Reset Pipeline view ───────────────────────────────────────────────────
+  // Hide all dynamic nodes/connectors
+  _hideAllPipeElements();
+  // Reset each static node back to idle
+  ['pn-orch','pn-impact','pn-similar','pn-summarizer','pn-rca'].forEach(_resetNode);
+  // Show the initial Run panel, hide Re-run button and hint
+  if ($('pipeline-run-panel')) $('pipeline-run-panel').style.display = 'flex';
+  if ($('pipeline-rerun-btn')) $('pipeline-rerun-btn').style.display = 'none';
+  if ($('pipeline-rerun-hint')) $('pipeline-rerun-hint').style.display = 'none';
+  // Re-enable run button
+  if ($('run-btn-pipeline')) $('run-btn-pipeline').disabled = false;
+
+  // ── Reset Phases view ─────────────────────────────────────────────────────
+  $('run-panel').style.display = '';
+  if ($('run-btn')) $('run-btn').disabled = false;
+  if ($('phases-ready-panel')) $('phases-ready-panel').style.display = 'none';
+  if ($('phases-rerun-btn'))   $('phases-rerun-btn').style.display = 'none';
+  $('phase1-section').classList.remove('visible');
+  $('phase2-section').classList.remove('visible');
+  $('phase3-section').classList.remove('visible');
+  if ($('timing-section')) $('timing-section').classList.remove('visible');
+  hide('phases-alert-feeder');
+
+  // ── Reset banner ──────────────────────────────────────────────────────────
+  $('banner-dot').style.display = 'none';
+  $('banner-severity').style.display = 'none';
+  $('banner-id').textContent = '';
+  $('banner-title').textContent = '';
+  $('banner-meta').textContent = '';
+
+  // ── Clear activity log ────────────────────────────────────────────────────
+  $('log-scroll').innerHTML = '';
+
+  // ── Navigate home ─────────────────────────────────────────────────────────
+  switchView('home');
 }
 
 /**
