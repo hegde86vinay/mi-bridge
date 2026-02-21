@@ -3489,10 +3489,16 @@ async function renderPipelinePhase3() {
 /** Toggle a playbook article card open / closed. */
 function togglePbCard(card) {
   const isOpen = card.classList.contains('pb-open');
-  // Close all cards first
-  document.querySelectorAll('.pb-card.pb-open').forEach(c => c.classList.remove('pb-open'));
-  // If it wasn't open, open it now
-  if (!isOpen) card.classList.add('pb-open');
+  // Close all open cards and reset their column span
+  document.querySelectorAll('.pb-card.pb-open').forEach(c => {
+    c.classList.remove('pb-open');
+    c.style.gridColumn = '';
+  });
+  // If it wasn't already open, open it full-width so no sibling shares the row
+  if (!isOpen) {
+    card.classList.add('pb-open');
+    card.style.gridColumn = '1 / -1';
+  }
 }
 
 /** Filter playbook cards by category pill. */
