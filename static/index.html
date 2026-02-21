@@ -913,6 +913,251 @@ details > .detail-body { padding: 8px 0 0 12px; font-size: 12px; color: var(--te
 .home-footer-left  { font-size: 12px; color: var(--text-dim); }
 .home-footer-right { font-size: 11px; color: var(--text-dim); opacity: .6; }
 
+/* ══════════════════════════════════════════════════════════
+   PLAYBOOK — Architecture blog section
+   ══════════════════════════════════════════════════════════ */
+
+/* Nav pill strip */
+.playbook-nav {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.playbook-pill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: border-color .15s, color .15s, background .15s;
+  white-space: nowrap;
+}
+.playbook-pill:hover        { border-color: var(--text-dim); color: var(--text); }
+.playbook-pill.pill-active  { background: var(--bg-card2); color: var(--text); border-color: var(--text-dim); }
+
+/* Article card grid */
+.playbook-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* Single article card */
+.pb-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color .2s;
+  cursor: pointer;
+}
+.pb-card:hover { border-color: var(--text-dim); }
+.pb-card.pb-open { border-color: var(--blue); cursor: default; }
+
+.pb-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 22px 24px;
+}
+.pb-card-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+  line-height: 1;
+  margin-top: 2px;
+}
+.pb-card-meta { flex: 1; min-width: 0; }
+.pb-card-tag {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+.pb-card-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.3;
+}
+.pb-card-sub {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 4px;
+  line-height: 1.5;
+}
+.pb-card-toggle {
+  font-size: 16px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  transition: transform .2s;
+  margin-top: 2px;
+}
+.pb-card.pb-open .pb-card-toggle { transform: rotate(180deg); color: var(--blue); }
+
+/* Expanded body */
+.pb-card-body {
+  display: none;
+  border-top: 1px solid var(--border);
+  padding: 24px;
+  flex-direction: column;
+  gap: 20px;
+}
+.pb-card.pb-open .pb-card-body { display: flex; }
+
+/* Body typography */
+.pb-h3 {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+.pb-para {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.75;
+}
+.pb-para strong { color: var(--text); font-weight: 600; }
+.pb-para em     { color: var(--blue); font-style: normal; font-weight: 600; }
+
+/* Code/mono block */
+.pb-code {
+  background: #0a0d12;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-family: 'SF Mono','Fira Code','Consolas',monospace;
+  font-size: 11.5px;
+  color: var(--text-dim);
+  line-height: 1.7;
+  overflow-x: auto;
+  white-space: pre;
+}
+.pb-code .c-green  { color: var(--green); }
+.pb-code .c-blue   { color: var(--blue); }
+.pb-code .c-amber  { color: var(--amber); }
+.pb-code .c-red    { color: var(--red); }
+.pb-code .c-purple { color: var(--purple); }
+.pb-code .c-dim    { color: #4a5568; }
+
+/* Comparison / matrix table */
+.pb-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.pb-table th {
+  text-align: left;
+  padding: 6px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border);
+}
+.pb-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid rgba(48,54,61,.5);
+  vertical-align: top;
+  line-height: 1.5;
+}
+.pb-table tr:last-child td { border-bottom: none; }
+.pb-table td:first-child { color: var(--text); font-weight: 600; }
+.pb-table td .dim { color: var(--text-dim); }
+
+/* Highlight callout box */
+.pb-callout {
+  border-left: 3px solid var(--amber);
+  background: rgba(227,179,65,.06);
+  border-radius: 0 8px 8px 0;
+  padding: 12px 16px;
+  font-size: 12.5px;
+  color: var(--text);
+  line-height: 1.7;
+}
+.pb-callout.blue  { border-color: var(--blue);   background: rgba(88,166,255,.06); }
+.pb-callout.green { border-color: var(--green);  background: rgba(63,185,80,.06); }
+.pb-callout.red   { border-color: var(--red);    background: rgba(248,81,73,.06); }
+.pb-callout strong { color: var(--text); }
+
+/* Numbered list */
+.pb-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.pb-list li {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.65;
+}
+.pb-list li .pb-num {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.pb-list li strong { color: var(--text); font-weight: 600; }
+
+/* Phase roadmap strip */
+.pb-phases {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.pb-phase-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(48,54,61,.5);
+  font-size: 12px;
+}
+.pb-phase-row:last-child { border-bottom: none; }
+.pb-phase-label {
+  flex-shrink: 0;
+  width: 130px;
+  font-weight: 700;
+  font-size: 11px;
+  color: var(--text-dim);
+  padding-top: 2px;
+}
+.pb-phase-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+.pb-phase-body { flex: 1; color: var(--text-dim); line-height: 1.6; }
+.pb-phase-body strong { color: var(--text); }
+
+/* Mobile responsive overrides for playbook */
+@media (max-width: 767px) {
+  .playbook-grid { grid-template-columns: 1fr; }
+  .pb-card-head  { padding: 16px; }
+  .pb-card-body  { padding: 16px; gap: 14px; }
+  .pb-code       { font-size: 10.5px; }
+  .pb-table      { font-size: 11px; }
+  .pb-phase-label { width: 100px; }
+}
+
 /* ── Pipeline flow container ──────────────────────────────── */
 .pipeline-flow {
   display: flex;
@@ -1545,6 +1790,371 @@ details > .detail-body { padding: 8px 0 0 12px; font-size: 12px; color: var(--te
           </div>
         </div>
       </div>
+
+      <!-- ══════════════════════════════════════════════════════
+           PLAYBOOK — Architecture deep-dive
+           ══════════════════════════════════════════════════════ -->
+      <div class="home-section" id="playbook-section">
+        <div>
+          <div class="home-section-label">Production Playbook</div>
+          <div class="home-section-title">Building this for real — a 100× architecture guide</div>
+          <div class="pb-para" style="margin-top:10px">Six deep-dives covering everything from LLM selection to the edge cases that will break you. Click any card to expand.</div>
+        </div>
+
+        <!-- ── Filter pills ── -->
+        <div class="playbook-nav">
+          <button class="playbook-pill pill-active" onclick="filterPlaybook('all',this)">All</button>
+          <button class="playbook-pill" onclick="filterPlaybook('architecture',this)">Architecture</button>
+          <button class="playbook-pill" onclick="filterPlaybook('models',this)">Model Selection</button>
+          <button class="playbook-pill" onclick="filterPlaybook('patterns',this)">Agent Patterns</button>
+          <button class="playbook-pill" onclick="filterPlaybook('production',this)">Production</button>
+          <button class="playbook-pill" onclick="filterPlaybook('trust',this)">Trust &amp; Adoption</button>
+        </div>
+
+        <!-- ── Article card grid ── -->
+        <div class="playbook-grid" id="playbook-grid">
+
+          <!-- ─── Card 1: Production Stack ─────────────────── -->
+          <div class="pb-card" data-tag="architecture" onclick="togglePbCard(this)">
+            <div class="pb-card-head">
+              <div class="pb-card-icon">🏗️</div>
+              <div class="pb-card-meta">
+                <div class="pb-card-tag">Architecture · Infrastructure</div>
+                <div class="pb-card-title">The Production Tech Stack</div>
+                <div class="pb-card-sub">From Kafka to pgvector — every layer explained with the reasoning behind each choice</div>
+              </div>
+              <div class="pb-card-toggle">⌄</div>
+            </div>
+            <div class="pb-card-body">
+
+              <div>
+                <div class="pb-h3">The three layers you must get right first</div>
+                <div class="pb-para">The simulation runs on a simple FastAPI server. Production needs three additional layers underneath the agent logic: reliable <strong>ingestion</strong>, durable <strong>orchestration</strong>, and multi-tier <strong>memory</strong>. Skip any one and you will hit the same failure mode at 3am.</div>
+              </div>
+
+              <div>
+                <div class="pb-h3">Ingestion — why Kafka and not direct API calls</div>
+                <div class="pb-code"><span class="c-dim"># Without Kafka — naive approach</span>
+Alert fires → webhook → agent pipeline runs
+<span class="c-red">Problem: 847 alerts in 90 seconds → 847 pipelines
+         Agent host OOMs. Alerts are lost. No replay.</span>
+
+<span class="c-dim"># With Kafka</span>
+Alert fires → Kafka topic → consumer group
+<span class="c-green">✓ Alerts buffered — process at your rate, not the alert rate
+✓ Replay missed alerts after an outage
+✓ Full audit log of every event, forever
+✓ Decouple alert volume from processing cost</span></div>
+              </div>
+
+              <div>
+                <div class="pb-h3">Runtime stack</div>
+                <div class="pb-table-wrap" style="overflow-x:auto">
+                <table class="pb-table">
+                  <thead><tr><th>Layer</th><th>Choice</th><th>Why not the alternative</th></tr></thead>
+                  <tbody>
+                    <tr><td>Agent runtime</td><td><span style="color:var(--blue)">Temporal</span></td><td class="dim">vs. plain async — Temporal makes every agent step durable and retryable without writing retry logic yourself</td></tr>
+                    <tr><td>Queue</td><td><span style="color:var(--blue)">Apache Kafka</span></td><td class="dim">vs. SQS — Kafka has replay, compaction, and consumer groups; SQS fine if already AWS-native</td></tr>
+                    <tr><td>Hot state</td><td><span style="color:var(--blue)">Redis</span></td><td class="dim">In-flight incident data shared across agents; TTL 4h; sub-millisecond reads</td></tr>
+                    <tr><td>Incident store</td><td><span style="color:var(--blue)">PostgreSQL + pgvector</span></td><td class="dim">vs. Pinecone — keeps vectors co-located with structured data; one fewer service to operate</td></tr>
+                    <tr><td>Topology</td><td><span style="color:var(--blue)">Neo4j or JSONB</span></td><td class="dim">Service dependency graph needs graph traversal — "what does this service depend on?" is a graph query</td></tr>
+                    <tr><td>Observability</td><td><span style="color:var(--blue)">OpenTelemetry → Jaeger</span></td><td class="dim">Every LLM call and tool call must be a traceable span. You cannot debug agent failures without this.</td></tr>
+                  </tbody>
+                </table>
+                </div>
+              </div>
+
+              <div class="pb-callout blue">
+                <strong>The one you will regret skipping:</strong> LLM observability. Use LangSmith or Langfuse from day one. Prompt versioning, token cost tracking, and regression runs are the difference between a system you can improve and one you are afraid to touch.
+              </div>
+
+            </div>
+          </div>
+
+          <!-- ─── Card 2: LLM Selection ─────────────────────── -->
+          <div class="pb-card" data-tag="models" onclick="togglePbCard(this)">
+            <div class="pb-card-head">
+              <div class="pb-card-icon">🧠</div>
+              <div class="pb-card-meta">
+                <div class="pb-card-tag">Model Selection · Cost vs. Quality</div>
+                <div class="pb-card-title">Picking the Right LLM per Agent</div>
+                <div class="pb-card-sub">The most common mistake: using Opus everywhere. The right model per task saves 80% in cost with zero quality loss.</div>
+              </div>
+              <div class="pb-card-toggle">⌄</div>
+            </div>
+            <div class="pb-card-body">
+
+              <div>
+                <div class="pb-h3">The selection matrix</div>
+                <table class="pb-table">
+                  <thead><tr><th>Agent</th><th>Model</th><th>Reason</th><th>Latency</th></tr></thead>
+                  <tbody>
+                    <tr><td>Orchestrator</td><td><span style="color:var(--purple)">Claude Opus</span></td><td class="dim">Complex tool-use planning, multi-step reasoning, ambiguity handling</td><td class="dim">3–8s</td></tr>
+                    <tr><td>Impact Agent</td><td><span style="color:var(--green)">Claude Haiku</span></td><td class="dim">Structured extraction from known schema — speed matters, reasoning depth does not</td><td class="dim">0.5–1s</td></tr>
+                    <tr><td>Similarity Agent</td><td><span style="color:var(--amber)">Embedding model</span></td><td class="dim">Semantic search is NOT an LLM problem. Embeddings + reranker outperform LLM similarity at 1/100th the cost</td><td class="dim">50–200ms</td></tr>
+                    <tr><td>Summariser</td><td><span style="color:var(--blue)">Claude Sonnet</span></td><td class="dim">Narrative quality and conciseness matter; Haiku produces mechanical summaries</td><td class="dim">1–3s</td></tr>
+                    <tr><td>RCA Agent</td><td><span style="color:var(--purple)">Claude Opus</span></td><td class="dim">Highest-stakes reasoning — causal chains, conflicting evidence, confidence calibration</td><td class="dim">5–15s</td></tr>
+                    <tr><td>Alert classifier</td><td><span style="color:var(--green)">Fine-tuned small model</span></td><td class="dim">High-volume pre-filter (P1/P2/P3 fast path). Rule engine or distilled model; Opus would cost $500/day</td><td class="dim">10–50ms</td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div>
+                <div class="pb-h3">The similarity agent trap — and the fix</div>
+                <div class="pb-code"><span class="c-red"># Wrong — passing raw incident history to an LLM</span>
+prompt = f"Here are 10,000 past incidents. Which are similar? {all_incidents}"
+<span class="c-dim"># → slow, expensive, hallucinated matches, ignores semantics</span>
+
+<span class="c-green"># Right — embeddings pipeline</span>
+alert_text → embed() → vector_search(top_k=10)
+          → reranker(cross_encoder) → top_3_with_scores
+          → LLM writes the narrative explanation only</div>
+              </div>
+
+              <div>
+                <div class="pb-h3">Cost at scale — a real example</div>
+                <div class="pb-para">At 200 P1/P2 incidents per month, using Opus on every agent costs approximately <strong>$8,000–$12,000/month</strong> in tokens. The right-sized stack above costs <strong>$400–$800/month</strong> — same quality, 95% cheaper. The Orchestrator and RCA agent justify Opus. Everything else does not.</div>
+              </div>
+
+              <div class="pb-callout">
+                <strong>The calibration principle:</strong> use the smallest model that reliably solves the sub-problem. Define "reliably" with an eval dataset of 50+ past incidents before you commit. A model that is 95% correct on structured extraction is fine. A model that is 95% correct on root cause analysis will get you fired.
+              </div>
+
+            </div>
+          </div>
+
+          <!-- ─── Card 3: Agent Design Patterns ──────────────── -->
+          <div class="pb-card" data-tag="patterns" onclick="togglePbCard(this)">
+            <div class="pb-card-head">
+              <div class="pb-card-icon">⚙️</div>
+              <div class="pb-card-meta">
+                <div class="pb-card-tag">Agent Patterns · Design</div>
+                <div class="pb-card-title">Three Patterns Every Agent Must Use</div>
+                <div class="pb-card-sub">Structured outputs, tool circuit-breakers, and three-tier memory — skip any one and production will break you</div>
+              </div>
+              <div class="pb-card-toggle">⌄</div>
+            </div>
+            <div class="pb-card-body">
+
+              <div>
+                <div class="pb-h3">Pattern 1 — Structured outputs, always</div>
+                <div class="pb-code"><span class="c-red"># Brittle — never do this in production</span>
+result = llm.call("Analyze this incident and tell me what's wrong")
+<span class="c-dim"># → parse freeform text → breaks on model version changes</span>
+
+<span class="c-green"># Production — pydantic schema enforced at the boundary</span>
+<span class="c-blue">class</span> ImpactAnalysis(BaseModel):
+    affected_services: list[str]
+    blast_radius_pct:  float       <span class="c-dim"># 0.0 – 1.0</span>
+    user_impact_count: int
+    severity:          Literal["P1","P2","P3","P4"]
+    confidence:        float       <span class="c-dim"># 0.0 – 1.0</span>
+    reasoning:         str         <span class="c-dim"># only freeform field</span>
+
+result = llm.call_with_schema(prompt, schema=ImpactAnalysis)
+<span class="c-green"># → guaranteed structure → safe to pass to next agent</span></div>
+              </div>
+
+              <div>
+                <div class="pb-h3">Pattern 2 — Tool calls with circuit breakers</div>
+                <div class="pb-code"><span class="c-blue">@tool</span>(timeout=10, retries=2, fallback=<span class="c-amber">None</span>, circuit_breaker=<span class="c-green">True</span>)
+<span class="c-blue">async def</span> query_splunk(query: str, window_minutes: int):
+    ...
+
+<span class="c-dim"># If Splunk is down → agent receives fallback=None
+# It MUST reason: "Splunk unavailable. Confidence reduced
+#  to 60%. Recommend manual log review before rollback."
+# NOT: hallucinate what Splunk would have returned.</span></div>
+              </div>
+
+              <div>
+                <div class="pb-h3">Pattern 3 — Three-tier agent memory</div>
+                <ul class="pb-list">
+                  <li><div class="pb-num">1</div><div><strong>In-context (short-term)</strong> — this incident's tool results live in the prompt. Max ~100K tokens with Claude. Cleared when incident resolves.</div></li>
+                  <li><div class="pb-num">2</div><div><strong>Redis (working memory)</strong> — hot state shared across agents working the same incident. Agent 1's results are instantly readable by Agent 2. TTL: 4 hours.</div></li>
+                  <li><div class="pb-num">3</div><div><strong>PostgreSQL + pgvector (long-term)</strong> — all resolved incidents, postmortems, runbooks. Source of truth for similarity search. Growing continuously and never cleared.</div></li>
+                </ul>
+              </div>
+
+              <div>
+                <div class="pb-h3">Pattern 4 — The human-in-the-loop gate</div>
+                <div class="pb-code">RCA completes → confidence score calculated
+    ├─ <span class="c-green">≥ 85%</span>  → auto-create ServiceNow ticket + notify on-call
+    └─ <span class="c-red">＜ 85%</span>  → Slack: "I found a likely cause but I'm not
+                  confident. Review before I proceed?"
+                  [✅ Confirm] [❌ Override]
+
+<span class="c-dim"># Start threshold at 95% (almost nothing auto-executes).
+# Lower it as the system earns trust over weeks.</span></div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- ─── Card 4: Real-World Data Challenges ─────────── -->
+          <div class="pb-card" data-tag="production" onclick="togglePbCard(this)">
+            <div class="pb-card-head">
+              <div class="pb-card-icon">🌪️</div>
+              <div class="pb-card-meta">
+                <div class="pb-card-tag">Production · Data Reality</div>
+                <div class="pb-card-title">The Data Challenges Simulation Never Shows You</div>
+                <div class="pb-card-sub">Alert storms, missing context, stale runbooks, and the topology problem — each one will break a naive implementation</div>
+              </div>
+              <div class="pb-card-toggle">⌄</div>
+            </div>
+            <div class="pb-card-body">
+
+              <div>
+                <div class="pb-h3">Challenge 1 — Alert storms</div>
+                <div class="pb-para">One upstream database fails. Result: <strong>847 alerts in 90 seconds</strong> from 12 monitoring tools. A naive system spins up 847 agent pipelines. At $0.05/incident that is $40 in 90 seconds — and every pipeline is redundant. The fix is a pre-LLM <em>alert correlator</em>: group by service dependency tree and time window, identify the root alert, attach downstream alerts as context, run one pipeline.</div>
+              </div>
+
+              <div>
+                <div class="pb-h3">Challenge 2 — Noisy and missing context</div>
+                <table class="pb-table">
+                  <thead><tr><th>What agents expect</th><th>What they actually get</th></tr></thead>
+                  <tbody>
+                    <tr><td>Clean Dynatrace traces</td><td class="dim">Traces that stopped 3 minutes before the alert fired</td></tr>
+                    <tr><td>Full Splunk logs</td><td class="dim">Splunk is lagging 8 minutes behind real time</td></tr>
+                    <tr><td>ServiceNow change requests</td><td class="dim">Deploy happened via Terraform apply — no CR was created</td></tr>
+                    <tr><td>Defined blast radius</td><td class="dim">Half the services have no SLIs defined at all</td></tr>
+                  </tbody>
+                </table>
+                <div class="pb-callout" style="margin-top:12px">Agents must be designed to <strong>reason with gaps</strong>, not refuse to answer. Every agent output needs a <code style="font-family:monospace;font-size:11px;color:var(--cyan)">data_gaps</code> field listing what was unavailable, so downstream agents and humans know what to verify manually.</div>
+              </div>
+
+              <div>
+                <div class="pb-h3">Challenge 3 — The topology problem</div>
+                <div class="pb-para">Most RCA agents fail because they don't know the service dependency graph. You cannot derive it from logs at incident time — it must be pre-built. Instrument every service with OpenTelemetry, build the dependency graph continuously, store it in Neo4j or as JSONB in Postgres. The RCA agent queries it as a tool call: <em>"what does Inventory Service depend on?"</em> → gets a live, accurate answer.</div>
+              </div>
+
+              <div>
+                <div class="pb-h3">Challenge 4 — Stale runbooks</div>
+                <div class="pb-code"><span class="c-red"># Runbook written 6 months ago:</span>
+"Restart pod X in namespace payment-ns"
+
+<span class="c-red"># Reality at 3am:</span>
+namespace renamed → command fails silently
+pod → deployment with 3 replicas → wrong restart strategy
+
+<span class="c-green"># Fix: runbooks as structured data, not freeform text</span>
+{
+  action: "restart",
+  target_type: "deployment",
+  target_selector: "app=payment-service",  <span class="c-dim"># resolved at runtime</span>
+  validation: "check_deployment_ready()",
+  rollback: "scale_to_previous()"
+}</div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- ─── Card 5: Edge Cases ─────────────────────────── -->
+          <div class="pb-card" data-tag="production" onclick="togglePbCard(this)">
+            <div class="pb-card-head">
+              <div class="pb-card-icon">⚠️</div>
+              <div class="pb-card-meta">
+                <div class="pb-card-tag">Edge Cases · Failure Modes</div>
+                <div class="pb-card-title">Eight Failure Modes — and How to Handle Each</div>
+                <div class="pb-card-sub">These are the known ways production multi-agent systems break. Plan for them before launch, not after.</div>
+              </div>
+              <div class="pb-card-toggle">⌄</div>
+            </div>
+            <div class="pb-card-body">
+
+              <ul class="pb-list">
+                <li>
+                  <div class="pb-num">1</div>
+                  <div><strong>Structurally valid, semantically wrong output.</strong> RCA says "rollback CR-789" but that CR is for a different service. Fix: post-processing validation layer that cross-references every entity the LLM mentions against live CMDB data. If the entity doesn't match → reject and regenerate with explicit constraint.</div>
+                </li>
+                <li>
+                  <div class="pb-num">2</div>
+                  <div><strong>Agent timeout mid-incident.</strong> Splunk takes 45s, RCA agent times out. Fix: all agents run async with partial-result tolerance. After timeout: proceed with available data, automatically reduce confidence score, surface the gap to the human reviewer.</div>
+                </li>
+                <li>
+                  <div class="pb-num">3</div>
+                  <div><strong>Context window overflow.</strong> 400 tool call results exceed 100K tokens. Fix: summarise-and-compress — after each tool call, extract key facts into structured fields, discard the raw output. Agents work with extracted facts, not raw tool responses.</div>
+                </li>
+                <li>
+                  <div class="pb-num">4</div>
+                  <div><strong>Cascading agent failure.</strong> Impact agent fails silently → Summariser gets incomplete input → RCA hallucinates confidently. Fix: every agent declares required vs. optional inputs. Required missing → hard stop, escalate to human. Optional missing → proceed with reduced confidence. Never forward incomplete state silently.</div>
+                </li>
+                <li>
+                  <div class="pb-num">5</div>
+                  <div><strong>Novel incident — no history.</strong> New service, zero similar past incidents, no runbook. Fix: agent must say this explicitly — "no historical precedent found, this appears to be a novel failure mode" — and offer to guide systematic hypothesis testing. Never hallucinate a confident answer when evidence is absent.</div>
+                </li>
+                <li>
+                  <div class="pb-num">6</div>
+                  <div><strong>Six simultaneous P1s from one root cause.</strong> Database failure cascades to six services. Fix: pre-agent correlation identifies the shared dependency, spawns one RCA pipeline, links all downstream incidents to the parent. Orchestrator updates all linked incidents when the root is resolved.</div>
+                </li>
+                <li>
+                  <div class="pb-num">7</div>
+                  <div><strong>Rollback recommendation for the wrong change request.</strong> Three CRs deployed in the past hour — agent picks the wrong one. Fix: rollback is a two-agent operation. RCA proposes a candidate. A second independent Rollback Validator agent re-evaluates using the deployment diff and service topology. Both must agree before a human approval gate is triggered.</div>
+                </li>
+                <li>
+                  <div class="pb-num">8</div>
+                  <div><strong>Alert source goes silent.</strong> Dynatrace itself has an outage — alerts stop. The system looks healthy when it isn't. Fix: heartbeat monitor on each alert source. If expected alert volume drops to zero for 5 minutes → page on-call with "monitoring system may be down — manual checks recommended."</div>
+                </li>
+              </ul>
+
+            </div>
+          </div>
+
+          <!-- ─── Card 6: Trust Roadmap ──────────────────────── -->
+          <div class="pb-card" data-tag="trust" onclick="togglePbCard(this)">
+            <div class="pb-card-head">
+              <div class="pb-card-icon">🤝</div>
+              <div class="pb-card-meta">
+                <div class="pb-card-tag">Trust &amp; Adoption · Rollout</div>
+                <div class="pb-card-title">The Five-Phase Trust Roadmap</div>
+                <div class="pb-card-sub">Technology is the easy part. Getting SRE teams to actually hand over control — that's a 12-month journey, done in stages.</div>
+              </div>
+              <div class="pb-card-toggle">⌄</div>
+            </div>
+            <div class="pb-card-body">
+
+              <div class="pb-callout green">
+                <strong>The core principle:</strong> the system earns autonomy incrementally. Each phase is only unlocked after the previous one has demonstrated measurable accuracy over at least 4 weeks. You cannot skip phases — teams that try end up rolling back the entire system after a bad incident.
+              </div>
+
+              <div class="pb-phases">
+                <div class="pb-phase-row">
+                  <div class="pb-phase-dot" style="background:var(--text-dim)"></div>
+                  <div class="pb-phase-label">Phase 1 · Months 1–3<br><span style="color:var(--text-dim);font-weight:400">Observer only</span></div>
+                  <div class="pb-phase-body">Agent runs silently on every incident. Output goes to <strong>#mi-bridge-shadow</strong> Slack channel. Engineers compare their investigation to the agent's findings. <strong>No alerts, no pages, no actions taken.</strong> Goal: establish baseline accuracy, generate curiosity.</div>
+                </div>
+                <div class="pb-phase-row">
+                  <div class="pb-phase-dot" style="background:var(--blue)"></div>
+                  <div class="pb-phase-label">Phase 2 · Months 4–6<br><span style="color:var(--text-dim);font-weight:400">Inform, don't decide</span></div>
+                  <div class="pb-phase-body">Agent posts triage brief to the live incident channel. Clearly labelled <em>"AI-assisted — verify before acting."</em> Engineers react with ✅ helpful or ❌ wrong. Goal: reduce time-to-acknowledge, agent earns credibility with a public track record.</div>
+                </div>
+                <div class="pb-phase-row">
+                  <div class="pb-phase-dot" style="background:var(--amber)"></div>
+                  <div class="pb-phase-label">Phase 3 · Months 7–9<br><span style="color:var(--text-dim);font-weight:400">Recommend with confidence</span></div>
+                  <div class="pb-phase-body">High-confidence findings (≥ 85%) get a <strong>"Suggested action"</strong> button in Slack. One click to approve the recommendation. Engineer still executes — agent does not touch production. Goal: reduce mean-time-to-mitigate on known patterns.</div>
+                </div>
+                <div class="pb-phase-row">
+                  <div class="pb-phase-dot" style="background:var(--green)"></div>
+                  <div class="pb-phase-label">Phase 4 · Months 10–12<br><span style="color:var(--text-dim);font-weight:400">Act with human gate</span></div>
+                  <div class="pb-phase-body">Agent executes approved runbook steps — non-destructive first (restart pods, scale deployments, flush caches). <strong>Rollback always requires explicit approval.</strong> Full audit trail. Goal: measurable reduction in on-call fatigue on routine incident patterns.</div>
+                </div>
+                <div class="pb-phase-row">
+                  <div class="pb-phase-dot" style="background:var(--purple)"></div>
+                  <div class="pb-phase-label">Phase 5 · Month 12+<br><span style="color:var(--text-dim);font-weight:400">Autonomous for known patterns</span></div>
+                  <div class="pb-phase-body">Well-understood incident types (memory leak → OOM → restart) are handled end-to-end: detect → diagnose → remediate → notify. Human override always available, always instant. Goal: <strong>zero-touch resolution</strong> for the pattern class; human focus shifts entirely to novel incidents.</div>
+                </div>
+              </div>
+
+              <div class="pb-callout">
+                <strong>The metric that unlocks each phase:</strong> track "agreement rate" — how often the agent's conclusion matches the engineer's post-incident review. Below 80%: stay in current phase. 80–90%: ready to unlock next phase. Above 90%: you have a system people trust.
+              </div>
+
+            </div>
+          </div>
+
+        </div><!-- playbook-grid -->
+      </div><!-- playbook-section -->
 
       <!-- ── Footer ── -->
       <div class="home-footer">
@@ -2872,6 +3482,33 @@ async function renderPipelinePhase3() {
       `<span style="color:var(--blue)">P3 ${(pt.phase_3 || 0).toFixed(2)}s</span><br>` +
     `<span style="color:var(--green);font-weight:700">✓ All agents complete · total ${wall.toFixed(2)}s</span>`;
   appendLogs([3]);
+}
+
+// ─── Playbook card interactions ──────────────────────────────────────────────
+
+/** Toggle a playbook article card open / closed. */
+function togglePbCard(card) {
+  const isOpen = card.classList.contains('pb-open');
+  // Close all cards first
+  document.querySelectorAll('.pb-card.pb-open').forEach(c => c.classList.remove('pb-open'));
+  // If it wasn't open, open it now
+  if (!isOpen) card.classList.add('pb-open');
+}
+
+/** Filter playbook cards by category pill. */
+function filterPlaybook(tag, pill) {
+  // Update pill active state
+  document.querySelectorAll('.playbook-pill').forEach(p => p.classList.remove('pill-active'));
+  pill.classList.add('pill-active');
+
+  // Close any open card before filtering
+  document.querySelectorAll('.pb-card.pb-open').forEach(c => c.classList.remove('pb-open'));
+
+  // Show/hide cards
+  document.querySelectorAll('.pb-card').forEach(card => {
+    const match = tag === 'all' || card.dataset.tag === tag;
+    card.style.display = match ? '' : 'none';
+  });
 }
 </script>
 </body>
