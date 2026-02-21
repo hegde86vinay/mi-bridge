@@ -1192,12 +1192,109 @@ details > .detail-body { padding: 8px 0 0 12px; font-size: 12px; color: var(--te
 
 /* ── Responsive: mobile (<768px) ──────────────────────────── */
 @media (max-width: 767px) {
-  .p-fork {
-    flex-direction: column;
-    align-items: center;
-    gap: 0;
+
+  /* ── Grid: collapse to single column, content + sidebar stacked ── */
+  .main-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
   }
-  /* On mobile the fork and join collapse to a simple vertical line */
+
+  /* Sidebar becomes a full-width block below content on mobile */
+  .log-sidebar {
+    height: auto;
+    max-height: 260px;
+    min-height: 160px;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    grid-column: 1;
+    grid-row: 2;
+    position: static;
+  }
+
+  /* All three views use full width on mobile */
+  .home-view {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .phases-col, .pipeline-view {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  /* ── Banner ── */
+  #banner { padding: 10px 14px; gap: 8px; }
+  #banner-title { font-size: 13px; }
+  #banner-meta  { width: 100%; }
+
+  /* ── Tab bar ── */
+  .tab-btn { font-size: 11px; padding: 9px 10px; }
+
+  /* ── Home hero ── */
+  .home-hero {
+    padding: 40px 20px 36px;
+    gap: 16px;
+  }
+  .home-logo  { font-size: 36px; }
+  .home-title { font-size: 26px; }
+  .home-subtitle { font-size: 13px; }
+  .home-btn-primary, .home-btn-secondary {
+    padding: 10px 20px;
+    font-size: 13px;
+    width: 100%;
+    text-align: center;
+  }
+  .home-cta-row { flex-direction: column; align-items: stretch; width: 100%; max-width: 280px; }
+
+  /* ── Home sections ── */
+  .home-section { padding: 32px 20px; gap: 20px; }
+  .home-footer  { padding: 16px 20px; }
+
+  /* How-it-works: 4 columns → 2 columns on mobile */
+  .home-steps {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .home-step {
+    padding: 16px !important;
+    border-right: none !important;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  /* Explore cards: 2 columns → 1 column */
+  .home-explore { grid-template-columns: 1fr; }
+
+  /* Architecture pipeline bar: wrap on mobile */
+  .home-pipeline {
+    flex-wrap: wrap;
+    border-radius: 8px;
+  }
+  .home-pipe-step {
+    flex: 0 0 33.33%;
+    min-width: 0;
+    border-bottom: 1px solid var(--border);
+    padding: 14px 8px;
+  }
+  .home-pipe-step:last-child { border-bottom: none; }
+  .home-pipe-step::after { display: none; }
+  .home-pipe-label { font-size: 9px; }
+  .home-pipe-sub   { font-size: 9px; }
+
+  /* Built for section: stack vertically */
+  .home-builder-box {
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px;
+  }
+  .home-tech-stack { min-width: unset; width: 100%; }
+
+  /* Footer: center everything */
+  .home-footer { flex-direction: column; text-align: center; }
+
+  /* ── Pipeline view ── */
+  .pipeline-view { padding: 20px 8px 48px; }
+
+  /* Fork/join connectors collapse to vertical line */
   .connector-fork {
     width: 2px;
     height: 28px;
@@ -1214,7 +1311,15 @@ details > .detail-body { padding: 8px 0 0 12px; font-size: 12px; color: var(--te
   }
   .connector-join::before,
   .connector-join::after { display: none; }
-  /* Between the two parallel nodes add a simple line */
+  .connector-fork, .connector-join { margin: 0 auto; }
+
+  /* Parallel nodes stack vertically */
+  .p-fork {
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+  /* Separator line between the two stacked parallel nodes */
   .p-fork .p-node:first-child::after {
     content: '';
     display: block;
@@ -1223,11 +1328,28 @@ details > .detail-body { padding: 8px 0 0 12px; font-size: 12px; color: var(--te
     background: var(--border);
     margin: 0 auto;
   }
-  .p-node {
-    width: min(300px, 90vw);
-  }
-  .pipeline-view { padding: 20px 8px 48px; }
-  .connector-fork, .connector-join { margin: 0 auto; }
+  .p-node { width: min(300px, 90vw); }
+
+  /* ── Phases view ── */
+  .phases-col { padding: 16px 12px; gap: 14px; }
+
+  /* Phase 1: two cards side-by-side → stacked */
+  .phase1-grid { grid-template-columns: 1fr; }
+
+  /* Cards: full width, smaller padding */
+  .card-body { padding: 12px; gap: 10px; }
+  .card-header { padding: 10px 12px; font-size: 12px; }
+  .stat-value  { font-size: 15px; }
+
+  /* Tables: allow horizontal scroll on mobile */
+  .evidence-table,
+  .cr-table { display: block; overflow-x: auto; white-space: nowrap; width: 100%; min-width: 0; }
+
+  /* Teams grid: 2×2 → 1 column on narrow screens */
+  .teams-grid { grid-template-columns: 1fr; }
+
+  /* Timing section */
+  #timing-section { padding: 0; }
 }
 </style>
 </head>
