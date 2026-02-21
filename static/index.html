@@ -1,0 +1,2713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MI Bridge Dashboard</title>
+<style>
+/* ── Reset & base ─────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #0d1117;
+  --bg-card:   #161b22;
+  --bg-card2:  #1c2128;
+  --border:    #30363d;
+  --text:      #e6edf3;
+  --text-dim:  #8b949e;
+  --red:       #f85149;
+  --amber:     #e3b341;
+  --green:     #3fb950;
+  --blue:      #58a6ff;
+  --cyan:      #39c5cf;
+  --purple:    #bc8cff;
+  --teal:      #2ea8a0;
+  --p1:        #ff4444;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ── Layout ───────────────────────────────────────────────── */
+.app {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-height: 100vh;
+}
+
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  min-height: 0;
+}
+
+.phases-col {
+  padding: 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Incident banner ──────────────────────────────────────── */
+#banner {
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.p1-badge {
+  background: var(--p1);
+  color: #fff;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: .5px;
+}
+.blink-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--p1);
+  animation: blink 1.2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+
+#banner-title { font-weight: 600; font-size: 15px; flex: 1; }
+#banner-meta  { color: var(--text-dim); font-size: 12px; white-space: nowrap; }
+
+/* ── Run panel ────────────────────────────────────────────── */
+#run-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 64px 24px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  text-align: center;
+}
+#run-panel h2 { font-size: 20px; color: var(--text); }
+#run-panel p  { color: var(--text-dim); max-width: 420px; }
+
+.run-btn {
+  background: var(--blue);
+  color: #000;
+  border: none;
+  padding: 12px 28px;
+  font-size: 15px;
+  font-weight: 700;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: opacity .15s;
+}
+.run-btn:hover { opacity: .85; }
+.run-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ── Loading ──────────────────────────────────────────────── */
+#loading-panel {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 80px 24px;
+  text-align: center;
+  color: var(--text-dim);
+  /* Overlay both views — fixed so it's visible regardless of active tab */
+  position: fixed;
+  inset: 0;
+  background: rgba(13,17,23,.85);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+}
+.spinner {
+  width: 40px; height: 40px;
+  border: 3px solid var(--border);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+#loading-msg { font-size: 15px; }
+#loading-sub { font-size: 12px; }
+
+/* ── Phase sections ───────────────────────────────────────── */
+.phase-section {
+  display: none;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeIn .4s ease;
+}
+.phase-section.visible { display: flex; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+.phase-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.phase-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--bg-card2);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  letter-spacing: .4px;
+  text-transform: uppercase;
+}
+.mode-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid;
+}
+.mode-parallel   { color: var(--cyan);  border-color: var(--cyan);  }
+.mode-sequential { color: var(--purple);border-color: var(--purple); }
+.phase-timing { color: var(--text-dim); font-size: 12px; margin-left: auto; }
+
+/* ── Cards ────────────────────────────────────────────────── */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  font-size: 13px;
+}
+.agent-tag {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: .5px;
+}
+.tag-impact   { background: rgba(227,179,65,.15); color: var(--amber); }
+.tag-similar  { background: rgba(227,179,65,.15); color: var(--amber); }
+.tag-sum      { background: rgba(57,197,207,.15); color: var(--cyan);  }
+.tag-rca      { background: rgba(188,140,255,.15);color: var(--purple);}
+
+.card-body { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+
+/* Two-column grid for Phase 1 */
+.phase1-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+/* ── Stat rows ────────────────────────────────────────────── */
+.stat-row { display: flex; flex-direction: column; gap: 4px; }
+.stat-label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .4px; }
+.stat-value { font-size: 18px; font-weight: 700; }
+.stat-value.danger { color: var(--red); }
+.stat-value.warn   { color: var(--amber); }
+.stat-value.good   { color: var(--green); }
+
+/* ── Chips ────────────────────────────────────────────────── */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 20px;
+  border: 1px solid;
+  font-family: monospace;
+}
+.chip-red    { color: var(--red);   border-color: var(--red);   background: rgba(248,81,73,.1); }
+.chip-amber  { color: var(--amber); border-color: var(--amber); background: rgba(227,179,65,.1); }
+.chip-blue   { color: var(--blue);  border-color: var(--blue);  background: rgba(88,166,255,.1); }
+.chip-purple { color: var(--purple);border-color: var(--purple);background: rgba(188,140,255,.1); }
+.chip-teal   { color: var(--teal);  border-color: var(--teal);  background: rgba(46,168,160,.1); }
+.chip-dim    { color: var(--text-dim);border-color: var(--border);background: transparent; }
+
+/* ── Confidence bar ───────────────────────────────────────── */
+.conf-wrap { display: flex; align-items: center; gap: 10px; }
+.conf-track {
+  flex: 1; height: 6px;
+  background: var(--bg-card2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.conf-fill {
+  height: 100%;
+  border-radius: 3px;
+  width: 0;
+  transition: width .8s ease;
+  background: linear-gradient(90deg, var(--amber), var(--green));
+}
+.conf-fill.danger { background: linear-gradient(90deg, var(--red), var(--amber)); }
+.conf-label { font-size: 12px; font-weight: 700; min-width: 32px; text-align: right; }
+
+/* ── Severity badge ───────────────────────────────────────── */
+.sev-badge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 6px;
+  letter-spacing: .5px;
+}
+.sev-escalate  { background: rgba(248,81,73,.2); color: var(--red); border: 1px solid var(--red); }
+.sev-maintain  { background: rgba(227,179,65,.2); color: var(--amber); border: 1px solid var(--amber); }
+.sev-downgrade { background: rgba(63,185,80,.2); color: var(--green); border: 1px solid var(--green); }
+
+/* ── Similar incidents list ───────────────────────────────── */
+.incident-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.incident-row:last-child { border-bottom: none; }
+.inc-rank {
+  width: 20px; text-align: center;
+  font-size: 11px; font-weight: 700;
+  color: var(--text-dim); flex-shrink: 0;
+}
+.inc-info { flex: 1; min-width: 0; }
+.inc-id   { font-size: 11px; color: var(--blue); font-family: monospace; }
+.inc-title{ font-size: 12px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.inc-time { font-size: 11px; color: var(--text-dim); white-space: nowrap; }
+.score-bar { width: 50px; }
+.score-track { height: 4px; background: var(--bg-card2); border-radius: 2px; overflow: hidden; }
+.score-fill  { height: 100%; background: var(--green); border-radius: 2px; transition: width .8s ease; }
+
+/* ── Callout box ──────────────────────────────────────────── */
+.callout {
+  border-left: 3px solid var(--amber);
+  background: rgba(227,179,65,.07);
+  padding: 10px 12px;
+  border-radius: 0 6px 6px 0;
+  font-size: 12px;
+  color: var(--text);
+}
+.callout-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--amber);
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  margin-bottom: 4px;
+}
+
+/* ── Timeline ─────────────────────────────────────────────── */
+.timeline { display: flex; flex-direction: column; gap: 0; }
+.tl-row {
+  display: flex;
+  gap: 12px;
+  position: relative;
+}
+.tl-row:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  left: 42px;
+  top: 20px;
+  bottom: -4px;
+  width: 1px;
+  background: var(--border);
+}
+.tl-time {
+  width: 56px;
+  flex-shrink: 0;
+  font-size: 10px;
+  font-family: monospace;
+  color: var(--text-dim);
+  padding-top: 2px;
+  text-align: right;
+}
+.tl-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  border: 2px solid var(--bg-card);
+  flex-shrink: 0;
+  margin-top: 4px;
+  z-index: 1;
+}
+.tl-dot.highlight { background: var(--amber); }
+.tl-dot.active    { background: var(--red); }
+.tl-event {
+  font-size: 12px;
+  color: var(--text);
+  padding-bottom: 12px;
+}
+.tl-event.highlight { color: var(--amber); }
+
+/* ── Teams grid ───────────────────────────────────────────── */
+.teams-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.team-card {
+  background: var(--bg-card2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.team-name    { font-weight: 600; font-size: 12px; }
+.team-reason  { font-size: 11px; color: var(--text-dim); }
+.team-contact { font-size: 11px; color: var(--blue); }
+.slack-pill {
+  display: inline-block;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(88,166,255,.1);
+  color: var(--blue);
+  border: 1px solid rgba(88,166,255,.3);
+  font-family: monospace;
+}
+
+/* ── Next steps ───────────────────────────────────────────── */
+.steps { display: flex; flex-direction: column; gap: 8px; }
+.step-row {
+  display: flex;
+  gap: 10px;
+  font-size: 12px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--bg-card2);
+}
+.step-num {
+  font-weight: 700;
+  font-size: 11px;
+  width: 18px;
+  flex-shrink: 0;
+  color: var(--text-dim);
+}
+.step-label {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  align-self: flex-start;
+  margin-top: 1px;
+}
+.lbl-immediate { background: rgba(248,81,73,.2); color: var(--red); }
+.lbl-parallel  { background: rgba(227,179,65,.2); color: var(--amber); }
+.lbl-post      { background: rgba(139,148,158,.15); color: var(--text-dim); }
+
+/* ── RCA root causes ──────────────────────────────────────── */
+.cause-row {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.cause-row.top-cause { border-color: var(--red); }
+.cause-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg-card2);
+  cursor: pointer;
+  user-select: none;
+}
+.cause-rank {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.cause-rank.rank1 { background: rgba(248,81,73,.2); border-color: var(--red); color: var(--red); }
+.cause-text { flex: 1; font-size: 12px; color: var(--text); }
+.cause-body {
+  display: none;
+  padding: 12px 14px;
+  font-size: 12px;
+  color: var(--text-dim);
+  border-top: 1px solid var(--border);
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+.cause-row.open .cause-body { display: block; }
+
+/* ── Rollback banner ──────────────────────────────────────── */
+.rollback-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: rgba(227,179,65,.1);
+  border: 1px solid var(--amber);
+  border-radius: 8px;
+}
+.rollback-icon { font-size: 20px; flex-shrink: 0; }
+.rollback-info { flex: 1; }
+.rollback-title { font-weight: 700; font-size: 13px; color: var(--amber); }
+.rollback-sub   { font-size: 12px; color: var(--text-dim); }
+.rollback-cr    { font-family: monospace; font-size: 12px; padding: 3px 8px; background: rgba(227,179,65,.2); border-radius: 4px; color: var(--amber); border: 1px solid var(--amber); }
+
+/* ── Evidence trail ───────────────────────────────────────── */
+.evidence-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.evidence-table th {
+  text-align: left;
+  padding: 6px 8px;
+  color: var(--text-dim);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  border-bottom: 1px solid var(--border);
+}
+.evidence-table td {
+  padding: 8px 8px;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  line-height: 1.4;
+}
+.evidence-table tr:last-child td { border-bottom: none; }
+
+/* ── CRs table ────────────────────────────────────────────── */
+.cr-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.cr-table th { text-align: left; padding: 6px 8px; color: var(--text-dim); font-size: 10px; text-transform: uppercase; letter-spacing: .4px; border-bottom: 1px solid var(--border); }
+.cr-table td { padding: 8px 8px; border-bottom: 1px solid var(--border); }
+.cr-table tr:last-child td { border-bottom: none; }
+.cr-row-highlight { background: rgba(227,179,65,.07); }
+.cr-row-dim td { opacity: .45; }
+.cr-id { font-family: monospace; font-weight: 700; color: var(--amber); }
+.cr-id-dim { font-family: monospace; color: var(--text-dim); }
+.cr-ruled-out { font-size: 10px; color: var(--text-dim); font-style: italic; }
+
+/* ── Remediation steps ────────────────────────────────────── */
+.remed-steps { display: flex; flex-direction: column; gap: 6px; }
+.remed-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 8px 10px;
+  background: var(--bg-card2);
+  border-radius: 6px;
+  font-size: 12px;
+}
+.remed-num { color: var(--text-dim); font-weight: 700; flex-shrink: 0; width: 18px; }
+.remed-text { flex: 1; font-family: monospace; line-height: 1.5; word-break: break-all; }
+.copy-btn {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 10px;
+  padding: 3px 7px;
+  border-radius: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color .15s, border-color .15s;
+}
+.copy-btn:hover { color: var(--blue); border-color: var(--blue); }
+
+/* ── Phase timing bars ────────────────────────────────────── */
+#timing-section { display: none; }
+#timing-section.visible { display: block; }
+.timing-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+.timing-title { font-weight: 600; margin-bottom: 12px; font-size: 13px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .4px; }
+.timing-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.timing-label { width: 160px; font-size: 12px; color: var(--text-dim); flex-shrink: 0; }
+.timing-track { flex: 1; height: 8px; background: var(--bg-card2); border-radius: 4px; overflow: hidden; }
+.timing-fill  { height: 100%; border-radius: 4px; transition: width 1s ease; }
+.fill-p1 { background: var(--cyan); }
+.fill-p2 { background: var(--purple); }
+.fill-p3 { background: var(--blue); }
+.fill-total { background: var(--green); }
+.timing-val { font-size: 12px; font-family: monospace; color: var(--text); width: 44px; text-align: right; flex-shrink: 0; }
+
+/* ── Next phase button ────────────────────────────────────── */
+.next-wrap { display: flex; justify-content: flex-end; padding-top: 4px; }
+.next-btn {
+  background: transparent;
+  border: 1px solid var(--blue);
+  color: var(--blue);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 20px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.next-btn:hover { background: var(--blue); color: #000; }
+.next-btn:disabled { opacity: .3; cursor: not-allowed; }
+.phase-done-badge {
+  font-size: 12px;
+  color: var(--green);
+  padding: 8px 16px;
+}
+
+/* ── Log sidebar ──────────────────────────────────────────── */
+.log-sidebar {
+  background: #0a0d12;
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  overflow: hidden;
+}
+.log-sidebar-header {
+  padding: 12px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+#log-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+.log-line {
+  display: flex;
+  gap: 6px;
+  padding: 2px 10px;
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 10.5px;
+  line-height: 1.6;
+  border-left: 2px solid transparent;
+  animation: logIn .2s ease;
+}
+@keyframes logIn { from{opacity:0;transform:translateX(-4px)} to{opacity:1;transform:translateX(0)} }
+.log-line.tool-call { border-left-color: var(--border); background: rgba(255,255,255,.02); }
+.log-line.complete  { color: var(--green); }
+.log-ts   { color: #3d4a5c; flex-shrink: 0; }
+.log-agent{ flex-shrink: 0; width: 68px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; }
+.log-msg  { color: #7a8899; word-break: break-word; }
+.log-msg.complete { color: var(--green); }
+.log-msg.tool     { color: #5a7a9a; }
+.log-msg.warning  { color: var(--amber); }
+
+.agent-ORCHESTRATOR { color: var(--blue); }
+.agent-IMPACT       { color: var(--amber); }
+.agent-SIMILAR      { color: var(--amber); }
+.agent-SUMMARIZER   { color: var(--cyan); }
+.agent-RCA          { color: var(--purple); }
+.agent-ERROR        { color: var(--red); }
+
+/* ── Sections / dividers ──────────────────────────────────── */
+.section-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  margin-bottom: 8px;
+}
+details > summary {
+  cursor: pointer;
+  list-style: none;
+  font-size: 12px;
+  color: var(--text-dim);
+  padding: 6px 0;
+}
+details > summary::before { content: '▶ '; font-size: 9px; }
+details[open] > summary::before { content: '▼ '; }
+details > .detail-body { padding: 8px 0 0 12px; font-size: 12px; color: var(--text-dim); line-height: 1.6; }
+
+/* ── Headline display ─────────────────────────────────────── */
+.headline-box {
+  background: rgba(248,81,73,.07);
+  border: 1px solid rgba(248,81,73,.3);
+  border-radius: 8px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.headline-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); animation: blink 1.2s ease-in-out infinite; flex-shrink: 0; margin-top: 5px; }
+.headline-text { font-weight: 700; font-size: 14px; line-height: 1.4; }
+
+/* ── Narrative ────────────────────────────────────────────── */
+.narrative { font-size: 13px; line-height: 1.7; color: var(--text-dim); }
+
+/* ── Utils ────────────────────────────────────────────────── */
+.hidden { display: none !important; }
+.sep { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
+
+/* ══════════════════════════════════════════════════════════
+   PIPELINE VIEW — Tab bar, node graph, connectors
+   ══════════════════════════════════════════════════════════ */
+
+/* ── Tab bar ──────────────────────────────────────────────── */
+.tab-bar {
+  display: flex;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  padding: 0 16px;
+  flex-shrink: 0;
+}
+.tab-btn {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 18px;
+  cursor: pointer;
+  transition: color .15s, border-color .15s;
+  letter-spacing: .2px;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.tab-active { color: var(--blue); border-bottom-color: var(--blue); }
+
+/* ── Grid cell overlap — all three views share the same cell ── */
+.phases-col    { grid-column: 1; grid-row: 1; }
+.pipeline-view { grid-column: 1; grid-row: 1; padding: 32px 16px 48px; overflow-y: auto; }
+.home-view     { grid-column: 1 / -1; grid-row: 1; overflow-y: auto; padding: 0; display: flex; flex-direction: column; align-items: stretch; min-height: 0; }
+
+/* ── Home page styles ─────────────────────────────────────── */
+.home-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 64px 48px 56px;
+  background: linear-gradient(180deg, rgba(88,166,255,.06) 0%, transparent 100%);
+  border-bottom: 1px solid var(--border);
+  gap: 20px;
+}
+.home-logo { font-size: 48px; line-height: 1; }
+.home-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--blue);
+}
+.home-title {
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: -.8px;
+  color: var(--text);
+  line-height: 1.15;
+}
+.home-subtitle {
+  font-size: 15px;
+  color: var(--text-dim);
+  line-height: 1.7;
+  max-width: 600px;
+}
+.home-badge-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.home-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 12px;
+  border-radius: 20px;
+  border: 1px solid;
+  letter-spacing: .3px;
+}
+.home-cta-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 4px;
+}
+.home-btn-primary {
+  background: var(--blue);
+  color: #000;
+  border: none;
+  padding: 11px 28px;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: opacity .15s;
+}
+.home-btn-primary:hover { opacity: .85; }
+.home-btn-secondary {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 11px 28px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color .15s, color .15s;
+}
+.home-btn-secondary:hover { border-color: var(--text-dim); color: var(--text); }
+
+/* ── Home body sections ───────────────────────────────────── */
+.home-section {
+  padding: 48px 56px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+.home-section + .home-section { border-top: 1px solid var(--border); }
+.home-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: .6px;
+}
+.home-section-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin-top: 2px;
+}
+
+/* How it works — numbered steps */
+.home-steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+}
+.home-step {
+  padding: 24px 24px 24px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-right: 1px solid var(--border);
+  padding-right: 28px;
+  padding-left: 0;
+}
+.home-step:first-child { padding-left: 0; }
+.home-step:last-child  { border-right: none; padding-right: 0; padding-left: 28px; }
+.home-step:not(:first-child):not(:last-child) { padding-left: 28px; }
+.home-step-num {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: var(--text-dim);
+  flex-shrink: 0;
+}
+.home-step-icon { font-size: 22px; }
+.home-step-title { font-size: 13px; font-weight: 700; color: var(--text); }
+.home-step-body  { font-size: 12px; color: var(--text-dim); line-height: 1.65; }
+
+/* Explore cards */
+.home-explore {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.home-explore-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  cursor: pointer;
+  transition: border-color .2s, transform .15s;
+}
+.home-explore-card:hover { transform: translateY(-2px); }
+.home-explore-card-top { display: flex; align-items: center; gap: 12px; }
+.home-explore-icon { font-size: 28px; }
+.home-explore-title { font-size: 16px; font-weight: 700; }
+.home-explore-body  { font-size: 13px; color: var(--text-dim); line-height: 1.65; flex: 1; }
+.home-explore-link  { font-size: 12px; font-weight: 600; }
+
+/* Agent pipeline row */
+.home-pipeline {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.home-pipe-step {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 20px 12px;
+  text-align: center;
+  border-right: 1px solid var(--border);
+  position: relative;
+}
+.home-pipe-step:last-child { border-right: none; }
+.home-pipe-step::after {
+  content: '→';
+  position: absolute;
+  right: -10px;
+  font-size: 14px;
+  color: var(--border);
+  z-index: 1;
+}
+.home-pipe-step:last-child::after { display: none; }
+.home-pipe-icon  { font-size: 18px; }
+.home-pipe-label { font-size: 10px; font-weight: 700; letter-spacing: .3px; }
+.home-pipe-sub   { font-size: 10px; color: var(--text-dim); }
+
+/* Built-for section */
+.home-builder-box {
+  background: rgba(88,166,255,.05);
+  border: 1px solid rgba(88,166,255,.2);
+  border-radius: 12px;
+  padding: 28px 32px;
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+}
+.home-builder-quote {
+  font-size: 15px;
+  color: var(--text);
+  line-height: 1.7;
+  flex: 1;
+}
+.home-builder-quote em { color: var(--blue); font-style: normal; font-weight: 600; }
+.home-tech-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+  min-width: 180px;
+}
+.home-tech-label { font-size: 10px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: .5px; }
+.home-tech-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.home-tech-pill  {
+  font-size: 11px; padding: 3px 10px;
+  border-radius: 4px;
+  background: var(--bg-card2);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-family: monospace;
+}
+
+/* Footer strip */
+.home-footer {
+  border-top: 1px solid var(--border);
+  padding: 20px 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.home-footer-left  { font-size: 12px; color: var(--text-dim); }
+.home-footer-right { font-size: 11px; color: var(--text-dim); opacity: .6; }
+
+/* ── Pipeline flow container ──────────────────────────────── */
+.pipeline-flow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+/* ── Vertical connector line ──────────────────────────────── */
+.connector {
+  width: 2px;
+  height: 28px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+.connector.active  { background: var(--blue); transition: background .4s; }
+.connector.complete{ background: var(--green); }
+
+/* ── Fork: horizontal bar + two downward legs ─────────────── */
+.connector-fork {
+  position: relative;
+  width: 352px;   /* center-to-center of two 300px nodes + 32px gap = 332px; add 10px padding each side */
+  height: 28px;
+  border-top: 2px solid var(--border);
+  flex-shrink: 0;
+}
+.connector-fork::before,
+.connector-fork::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  width: 2px;
+  height: 28px;
+  background: var(--border);
+}
+.connector-fork::before { left: 0; }
+.connector-fork::after  { right: 0; }
+
+/* ── Join: two upward legs + horizontal bar ───────────────── */
+.connector-join {
+  position: relative;
+  width: 352px;
+  height: 28px;
+  border-bottom: 2px solid var(--border);
+  flex-shrink: 0;
+}
+.connector-join::before,
+.connector-join::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  width: 2px;
+  height: 28px;
+  background: var(--border);
+}
+.connector-join::before { left: 0; }
+.connector-join::after  { right: 0; }
+
+/* ── Phase 1 parallel fork row ────────────────────────────── */
+.p-fork {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+}
+
+/* ── Pipeline node card ───────────────────────────────────── */
+.p-node {
+  width: 300px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color .35s, box-shadow .35s;
+}
+.p-node.node-running {
+  border-color: var(--blue);
+  animation: node-pulse 1.2s ease infinite;
+}
+.p-node.node-complete {
+  border-color: var(--green);
+  animation: none;
+  box-shadow: 0 0 0 1px rgba(63,185,80,.2);
+}
+@keyframes node-pulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(88,166,255,.5); }
+  50%      { box-shadow: 0 0 0 8px rgba(88,166,255,0); }
+}
+
+/* Node header */
+.p-node-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-card2);
+}
+.p-node-tag {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: .5px;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+.p-node-title {
+  flex: 1;
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--text);
+}
+.p-node-status {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.p-node-status.running { color: var(--blue); }
+.p-node-status.done    { color: var(--green); }
+
+/* Tool calls list */
+.p-node-tools {
+  padding: 8px 14px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-height: 32px;
+}
+.p-tool-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 10.5px;
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  color: var(--text-dim);
+  animation: fadeIn .25s ease;
+  line-height: 1.55;
+}
+.p-tool-icon  { flex-shrink: 0; width: 14px; text-align: center; font-style: normal; }
+.p-tool-text  { flex: 1; word-break: break-all; }
+.p-tool-check { flex-shrink: 0; color: var(--green); font-size: 11px; font-weight: 700; }
+
+/* Result footer */
+.p-node-result {
+  padding: 10px 14px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  background: var(--bg-card2);
+  color: var(--text);
+  animation: fadeIn .4s ease;
+  line-height: 1.75;
+}
+
+/* Special complete node */
+#pn-complete { border-color: var(--green); }
+#pn-complete .p-node-header { background: rgba(63,185,80,.07); }
+
+/* ── Dramatic reveal: nodes/connectors hidden until triggered ── */
+.pipe-hidden {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.97);
+  pointer-events: none;
+}
+.pipe-reveal {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition: opacity .35s ease, transform .35s ease;
+  pointer-events: auto;
+}
+
+/* ── Section divider label ────────────────────────────────── */
+.pipeline-phase-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  margin: 4px 0 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pipeline-phase-label::before,
+.pipeline-phase-label::after {
+  content: '';
+  height: 1px;
+  width: 24px;
+  background: var(--border);
+}
+
+/* ── Alert feeder node ────────────────────────────────────── */
+.alert-feeder-node {
+  border-color: var(--border);
+  position: relative;
+}
+/* Pulse ring on the node border when listening */
+.alert-feeder-node.feeder-listening {
+  border-color: var(--red);
+  animation: feeder-pulse 2s ease-in-out infinite;
+}
+@keyframes feeder-pulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(248,81,73,.5); }
+  50%      { box-shadow: 0 0 0 10px rgba(248,81,73,0); }
+}
+.alert-feeder-node.feeder-fired {
+  border-color: var(--red);
+  animation: none;
+  box-shadow: 0 0 0 2px rgba(248,81,73,.3);
+}
+/* Animated signal dots on the feeder connector line */
+.feeder-connector {
+  position: relative;
+  overflow: visible;
+}
+.feeder-connector.signal-active::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--red);
+  animation: signal-travel 0.6s ease-in forwards;
+}
+@keyframes signal-travel {
+  0%   { top: 0;   opacity: 1; }
+  100% { top: 28px; opacity: 0; }
+}
+
+/* ── Phases view: incoming alert feeder bar ────────────────── */
+#phases-alert-feeder {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: rgba(248,81,73,.07);
+  border: 1px solid rgba(248,81,73,.3);
+  border-radius: 8px;
+  margin-bottom: 4px;
+  font-size: 12px;
+  animation: fadeIn .4s ease;
+}
+.feeder-pulse-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--red);
+  flex-shrink: 0;
+  animation: blink 1.5s ease-in-out infinite;
+}
+.feeder-source-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(248,81,73,.18);
+  color: var(--red);
+  letter-spacing: .4px;
+  flex-shrink: 0;
+}
+.feeder-arrow {
+  color: var(--text-dim);
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.feeder-text { flex: 1; color: var(--text-dim); }
+.feeder-text strong { color: var(--text); }
+
+/* ── Responsive: mobile (<768px) ──────────────────────────── */
+@media (max-width: 767px) {
+  .p-fork {
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+  /* On mobile the fork and join collapse to a simple vertical line */
+  .connector-fork {
+    width: 2px;
+    height: 28px;
+    border-top: none;
+    border-left: 2px solid var(--border);
+  }
+  .connector-fork::before,
+  .connector-fork::after { display: none; }
+  .connector-join {
+    width: 2px;
+    height: 28px;
+    border-bottom: none;
+    border-left: 2px solid var(--border);
+  }
+  .connector-join::before,
+  .connector-join::after { display: none; }
+  /* Between the two parallel nodes add a simple line */
+  .p-fork .p-node:first-child::after {
+    content: '';
+    display: block;
+    width: 2px;
+    height: 12px;
+    background: var(--border);
+    margin: 0 auto;
+  }
+  .p-node {
+    width: min(300px, 90vw);
+  }
+  .pipeline-view { padding: 20px 8px 48px; }
+  .connector-fork, .connector-join { margin: 0 auto; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ── Incident banner ── -->
+  <div id="banner">
+    <div class="blink-dot" id="banner-dot" style="display:none"></div>
+    <span class="p1-badge" id="banner-severity" style="display:none">P1</span>
+    <span id="banner-id" style="color:var(--text-dim);font-family:monospace;font-size:12px"></span>
+    <span id="banner-title" style="font-weight:600;flex:1"></span>
+    <span id="banner-meta" style="color:var(--text-dim);font-size:12px"></span>
+  </div>
+
+  <!-- ── Tab bar (always visible) ── -->
+  <div class="tab-bar" id="tab-bar">
+    <button class="tab-btn tab-active" id="tab-home"     onclick="switchView('home')">⌂ Home</button>
+    <button class="tab-btn"            id="tab-pipeline" onclick="switchView('pipeline')">⬡ Pipeline View</button>
+    <button class="tab-btn"            id="tab-phases"   onclick="switchView('phases')">⊞ Phases View</button>
+  </div>
+
+  <div class="main-grid">
+
+    <!-- ══════════════════════════════════════════════════════
+         HOME VIEW
+         ══════════════════════════════════════════════════════ -->
+    <div class="home-view" id="home-view">
+
+      <!-- ── Hero ── -->
+      <div class="home-hero">
+        <div class="home-logo">🌉</div>
+        <div class="home-eyebrow">Multi-Agent Incident Response</div>
+        <div class="home-title">MI Bridge</div>
+        <div class="home-subtitle">
+          A working prototype that shows how autonomous AI agents can be orchestrated
+          to detect, triage, and resolve production incidents — end to end, without a human war-room.
+        </div>
+        <div class="home-badge-row">
+          <span class="home-badge" style="color:var(--red);border-color:rgba(248,81,73,.4)">Mock · Dry Run</span>
+          <span class="home-badge" style="color:var(--blue);border-color:rgba(88,166,255,.4)">Multi-Agent</span>
+          <span class="home-badge" style="color:var(--green);border-color:rgba(63,185,80,.4)">Open Concept</span>
+          <span class="home-badge" style="color:var(--purple);border-color:rgba(188,140,255,.4)">Claude-Powered</span>
+        </div>
+        <div class="home-cta-row">
+          <button class="home-btn-primary" onclick="switchView('pipeline')">⬡ Watch it run →</button>
+          <button class="home-btn-secondary" onclick="switchView('phases')">⊞ Step through phases</button>
+        </div>
+      </div>
+
+      <!-- ── Agent pipeline ── -->
+      <div class="home-section">
+        <div>
+          <div class="home-section-label">Architecture</div>
+          <div class="home-section-title">Five agents, three phases, one resolution</div>
+        </div>
+        <div class="home-pipeline">
+          <div class="home-pipe-step">
+            <span class="home-pipe-icon">📡</span>
+            <span class="home-pipe-label" style="color:var(--red)">DYNATRACE</span>
+            <span class="home-pipe-sub">Alert source</span>
+          </div>
+          <div class="home-pipe-step">
+            <span class="home-pipe-icon">🧠</span>
+            <span class="home-pipe-label" style="color:var(--blue)">ORCHESTRATOR</span>
+            <span class="home-pipe-sub">Triage &amp; dispatch</span>
+          </div>
+          <div class="home-pipe-step" style="background:rgba(227,179,65,.04)">
+            <span class="home-pipe-icon">⚡</span>
+            <span class="home-pipe-label" style="color:var(--amber)">IMPACT</span>
+            <span class="home-pipe-sub">Blast radius · Phase 1</span>
+          </div>
+          <div class="home-pipe-step" style="background:rgba(227,179,65,.04)">
+            <span class="home-pipe-icon">🔍</span>
+            <span class="home-pipe-label" style="color:var(--amber)">SIMILAR</span>
+            <span class="home-pipe-sub">Past incidents · Phase 1</span>
+          </div>
+          <div class="home-pipe-step">
+            <span class="home-pipe-icon">📝</span>
+            <span class="home-pipe-label" style="color:var(--cyan)">SUMMARIZER</span>
+            <span class="home-pipe-sub">MI summary · Phase 2</span>
+          </div>
+          <div class="home-pipe-step">
+            <span class="home-pipe-icon">🔬</span>
+            <span class="home-pipe-label" style="color:var(--purple)">RCA</span>
+            <span class="home-pipe-sub">Root cause · Phase 3</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── How it works ── -->
+      <div class="home-section">
+        <div>
+          <div class="home-section-label">How it works</div>
+          <div class="home-section-title">From alert to resolution in under 2 seconds</div>
+        </div>
+        <div class="home-steps">
+          <div class="home-step">
+            <div class="home-step-num">1</div>
+            <div class="home-step-icon">📡</div>
+            <div class="home-step-title">Alert fires</div>
+            <div class="home-step-body">A mock Dynatrace P1 fires — Inventory Service timeout cascade during a flash sale. The Orchestrator receives it and decides how to respond.</div>
+          </div>
+          <div class="home-step">
+            <div class="home-step-num">2</div>
+            <div class="home-step-icon">⚡</div>
+            <div class="home-step-title">Parallel triage</div>
+            <div class="home-step-body">IMPACT and SIMILAR run simultaneously. One estimates blast radius and revenue loss; the other searches past incidents for runbook matches.</div>
+          </div>
+          <div class="home-step">
+            <div class="home-step-num">3</div>
+            <div class="home-step-icon">📝</div>
+            <div class="home-step-title">Bridge summary</div>
+            <div class="home-step-body">SUMMARIZER synthesises findings — timeline, teams to page, Slack channels, and prioritised next steps — into a single human-readable brief.</div>
+          </div>
+          <div class="home-step">
+            <div class="home-step-num">4</div>
+            <div class="home-step-icon">🔬</div>
+            <div class="home-step-title">Root cause</div>
+            <div class="home-step-body">RCA correlates Splunk logs, Dynatrace traces, and ServiceNow change requests to identify the culprit and recommend a rollback candidate.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Explore ── -->
+      <div class="home-section">
+        <div>
+          <div class="home-section-label">Explore</div>
+          <div class="home-section-title">Two ways to experience the same simulation</div>
+        </div>
+        <div class="home-explore">
+          <div class="home-explore-card" style="border-color:rgba(88,166,255,.25)"
+               onclick="switchView('pipeline')"
+               onmouseover="this.style.borderColor='var(--blue)'"
+               onmouseout="this.style.borderColor='rgba(88,166,255,.25)'">
+            <div class="home-explore-card-top">
+              <div class="home-explore-icon">⬡</div>
+              <div>
+                <div class="home-explore-title" style="color:var(--blue)">Pipeline View</div>
+                <div style="font-size:11px;color:var(--text-dim)">Cinematic · real-time</div>
+              </div>
+            </div>
+            <div class="home-explore-body">Watch the agent graph come alive — each node spawns as the Orchestrator dispatches it, tool calls stream in live, and the pipeline builds itself top-to-bottom. Best for demos and first impressions.</div>
+            <div class="home-explore-link" style="color:var(--blue)">⬡ Open Pipeline View →</div>
+          </div>
+          <div class="home-explore-card" style="border-color:rgba(63,185,80,.25)"
+               onclick="switchView('phases')"
+               onmouseover="this.style.borderColor='var(--green)'"
+               onmouseout="this.style.borderColor='rgba(63,185,80,.25)'">
+            <div class="home-explore-card-top">
+              <div class="home-explore-icon">⊞</div>
+              <div>
+                <div class="home-explore-title" style="color:var(--green)">Phases View</div>
+                <div style="font-size:11px;color:var(--text-dim)">Detailed · step-through</div>
+              </div>
+            </div>
+            <div class="home-explore-body">Step through each phase at your own pace and read the full data cards — blast radius stats, similar incident scores, summary narrative, and annotated root cause evidence trail.</div>
+            <div class="home-explore-link" style="color:var(--green)">⊞ Open Phases View →</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Built for builders ── -->
+      <div class="home-section">
+        <div>
+          <div class="home-section-label">Built for builders</div>
+          <div class="home-section-title">A reference architecture for custom agent systems</div>
+        </div>
+        <div class="home-builder-box">
+          <div class="home-builder-quote">
+            This is a <em>concept prototype</em>, not a production tool. All data is mocked — no real APIs are called.
+            The purpose is to demonstrate the <em>patterns</em> that make multi-agent incident response work:
+            a central orchestrator, parallel specialised sub-agents, structured phase outputs, and a human-readable
+            synthesis layer. Use it as a <em>blueprint</em> when designing your own agent systems with Claude or
+            any other LLM framework.
+            <br><br>
+            <span style="font-size:12px;color:var(--text-dim)">
+              No API key required to run the simulation. The mock server returns pre-baked realistic data
+              so the full agent flow can be explored without any credentials.
+            </span>
+          </div>
+          <div class="home-tech-stack">
+            <div class="home-tech-label">Mock integrations</div>
+            <div class="home-tech-pills">
+              <span class="home-tech-pill">Dynatrace</span>
+              <span class="home-tech-pill">Splunk</span>
+              <span class="home-tech-pill">ServiceNow</span>
+              <span class="home-tech-pill">PagerDuty</span>
+            </div>
+            <div class="home-tech-label" style="margin-top:8px">Stack</div>
+            <div class="home-tech-pills">
+              <span class="home-tech-pill">FastAPI</span>
+              <span class="home-tech-pill">Claude API</span>
+              <span class="home-tech-pill">Vanilla JS</span>
+            </div>
+            <div class="home-tech-label" style="margin-top:8px">Agent pattern</div>
+            <div class="home-tech-pills">
+              <span class="home-tech-pill">Orchestrator</span>
+              <span class="home-tech-pill">Sub-agents</span>
+              <span class="home-tech-pill">Parallel</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Footer ── -->
+      <div class="home-footer">
+        <div class="home-footer-left">🌉 <strong>MI Bridge</strong> &nbsp;·&nbsp; Multi-Agent Incident Response Prototype</div>
+        <div class="home-footer-right">Mock data only · No real APIs · Built as a concept reference</div>
+      </div>
+
+    </div><!-- home-view -->
+
+    <!-- ── Main phases column (hidden by default — Pipeline View is default) ── -->
+    <main class="phases-col hidden" id="phases-col-main">
+
+      <!-- Incoming alert feeder bar (phases view) -->
+      <div id="phases-alert-feeder" class="hidden">
+        <div class="feeder-pulse-dot"></div>
+        <span class="feeder-source-badge">DYNATRACE</span>
+        <span class="feeder-arrow">→</span>
+        <span class="feeder-text">
+          Alert fired: <strong id="feeder-incident-id"></strong> ·
+          <strong style="color:var(--red)">P1</strong> ·
+          <span id="feeder-title-short"></span>
+        </span>
+        <span style="font-size:10px;color:var(--text-dim);flex-shrink:0" id="feeder-ts"></span>
+      </div>
+
+      <!-- Run panel (state 0) -->
+      <div id="run-panel">
+        <h2>MI Bridge Simulation</h2>
+        <p>Watch four AI agents analyse a P1 flash-sale checkout incident — step through each phase to see how impact, similarity, summary, and root cause are determined.</p>
+        <button class="run-btn" id="run-btn" onclick="runPhasesSimulation()">▶ Run Simulation (Dry Run)</button>
+        <p style="font-size:11px;color:var(--text-dim)">No API key required · completes in ~1.5 s</p>
+      </div>
+
+      <!-- Phases-only loading panel (inline, only shows inside phases col) -->
+      <div id="phases-loading-panel" style="display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:64px 24px;text-align:center;color:var(--text-dim)">
+        <div class="spinner"></div>
+        <div style="font-size:15px">Running agents…</div>
+        <div style="font-size:12px">Calling mock Dynatrace · Splunk · ServiceNow · PagerDuty</div>
+      </div>
+
+      <!-- Ready panel (shown after simulation completes, before user steps through phases) -->
+      <div id="phases-ready-panel" style="display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:48px 24px;border:1px dashed var(--green);border-radius:12px;text-align:center">
+        <div style="font-size:28px">✅</div>
+        <h2 style="font-size:18px;color:var(--text)">Simulation Complete</h2>
+        <p style="color:var(--text-dim);max-width:380px;font-size:13px">All agents have finished. Step through each phase below to explore the results.</p>
+        <button class="run-btn" onclick="startPhasesWalkthrough()" style="background:var(--green)">▶ Start Phase Walkthrough</button>
+      </div>
+
+      <!-- Loading (state 1) -->
+      <div id="loading-panel">
+        <div class="spinner"></div>
+        <div id="loading-msg">Running agents…</div>
+        <div id="loading-sub" style="font-size:11px">Calling mock Dynatrace · Splunk · ServiceNow · PagerDuty</div>
+      </div>
+
+      <!-- Phase 1 (state ≥ 2) -->
+      <section class="phase-section" id="phase1-section">
+        <div class="phase-header">
+          <span class="phase-badge">Phase 1</span>
+          <span style="font-weight:600">Impact Analysis &amp; Similar Incidents</span>
+          <span class="mode-badge mode-parallel">parallel</span>
+          <span class="phase-timing" id="p1-timing"></span>
+        </div>
+
+        <div class="phase1-grid">
+          <!-- Impact Analysis card -->
+          <div class="card">
+            <div class="card-header">
+              <span class="agent-tag tag-impact">IMPACT</span>
+              Impact Analysis
+            </div>
+            <div class="card-body" id="impact-body">
+              <div class="stat-row">
+                <div class="stat-label">Users affected</div>
+                <div class="stat-value danger" id="imp-users"></div>
+              </div>
+              <div class="stat-row">
+                <div class="stat-label">Revenue impact</div>
+                <div class="stat-value danger" id="imp-revenue"></div>
+              </div>
+              <div class="stat-row">
+                <div class="stat-label">Blast radius</div>
+                <div class="chips" id="imp-blast"></div>
+              </div>
+              <div class="stat-row">
+                <div class="stat-label">Confidence</div>
+                <div class="conf-wrap">
+                  <div class="conf-track"><div class="conf-fill" id="imp-conf-fill"></div></div>
+                  <span class="conf-label" id="imp-conf-label"></span>
+                </div>
+              </div>
+              <div class="stat-row">
+                <div class="stat-label">Recommendation</div>
+                <span id="imp-sev"></span>
+              </div>
+              <details>
+                <summary>Agent reasoning</summary>
+                <div class="detail-body" id="imp-reasoning"></div>
+              </details>
+            </div>
+          </div>
+
+          <!-- Similar Incidents card -->
+          <div class="card">
+            <div class="card-header">
+              <span class="agent-tag tag-similar">SIMILAR</span>
+              Similar Incidents
+            </div>
+            <div class="card-body">
+              <div class="section-label">Top 3 by similarity</div>
+              <div id="sim-list"></div>
+              <div class="callout">
+                <div class="callout-label">Suggested runbook</div>
+                <div id="sim-runbook"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="next-wrap">
+          <button class="next-btn" id="p1-next" onclick="nextPhase()">Phase 2: MI Summary →</button>
+        </div>
+      </section>
+
+      <!-- Phase 2 (state ≥ 3) -->
+      <section class="phase-section" id="phase2-section">
+        <div class="phase-header">
+          <span class="phase-badge">Phase 2</span>
+          <span style="font-weight:600">MI Bridge Summary</span>
+          <span class="mode-badge mode-sequential">sequential</span>
+          <span class="phase-timing" id="p2-timing"></span>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="agent-tag tag-sum">SUMMARIZER</span>
+            Bridge Summary
+          </div>
+          <div class="card-body">
+            <div class="headline-box">
+              <div class="headline-dot"></div>
+              <div class="headline-text" id="sum-headline"></div>
+            </div>
+            <div class="narrative" id="sum-narrative"></div>
+
+            <div>
+              <div class="section-label">Timeline</div>
+              <div class="timeline" id="sum-timeline"></div>
+            </div>
+
+            <div>
+              <div class="section-label">Teams on bridge</div>
+              <div class="teams-grid" id="sum-teams"></div>
+            </div>
+
+            <div>
+              <div class="section-label">Next steps</div>
+              <div class="steps" id="sum-steps"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="next-wrap">
+          <button class="next-btn" id="p2-next" onclick="nextPhase()">Phase 3: Root Cause Analysis →</button>
+        </div>
+      </section>
+
+      <!-- Phase 3 (state ≥ 4) -->
+      <section class="phase-section" id="phase3-section">
+        <div class="phase-header">
+          <span class="phase-badge">Phase 3</span>
+          <span style="font-weight:600">Root Cause Analysis</span>
+          <span class="mode-badge mode-sequential">sequential</span>
+          <span class="phase-timing" id="p3-timing"></span>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="agent-tag tag-rca">RCA</span>
+            Root Cause Analysis
+          </div>
+          <div class="card-body">
+            <!-- Root causes -->
+            <div>
+              <div class="section-label">Probable root causes</div>
+              <div id="rca-causes" style="display:flex;flex-direction:column;gap:8px"></div>
+            </div>
+
+            <!-- Rollback banner -->
+            <div id="rca-rollback-banner" class="rollback-banner" style="display:none">
+              <div class="rollback-icon">⚠️</div>
+              <div class="rollback-info">
+                <div class="rollback-title">Rollback Candidate Identified</div>
+                <div class="rollback-sub">Revert this change request immediately to restore service</div>
+              </div>
+              <span class="rollback-cr" id="rca-rollback-cr"></span>
+            </div>
+
+            <!-- Correlated CRs -->
+            <div>
+              <div class="section-label">Correlated change requests</div>
+              <table class="cr-table">
+                <thead>
+                  <tr><th>CR</th><th>Service</th><th>Deployed</th><th>By</th><th>Description</th></tr>
+                </thead>
+                <tbody id="rca-crs"></tbody>
+              </table>
+            </div>
+
+            <!-- Evidence trail -->
+            <details open>
+              <summary>Evidence trail (5 sources)</summary>
+              <div class="detail-body" style="padding:0;margin-top:8px">
+                <table class="evidence-table">
+                  <thead>
+                    <tr><th>Source</th><th>Action</th><th>Finding</th></tr>
+                  </thead>
+                  <tbody id="rca-evidence"></tbody>
+                </table>
+              </div>
+            </details>
+
+            <!-- Remediation steps -->
+            <div>
+              <div class="section-label">Remediation steps</div>
+              <div class="remed-steps" id="rca-remed"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="next-wrap">
+          <span style="font-size:13px;color:var(--green);padding:8px 16px">✓ Simulation Complete</span>
+        </div>
+      </section>
+
+      <!-- Phase timings (state 4) -->
+      <div id="timing-section">
+        <div class="timing-card">
+          <div class="timing-title">⏱ Phase Timings</div>
+          <div class="timing-row">
+            <span class="timing-label">Phase 1 (parallel)</span>
+            <div class="timing-track"><div class="timing-fill fill-p1" id="tf-p1" style="width:0"></div></div>
+            <span class="timing-val" id="tv-p1"></span>
+          </div>
+          <div class="timing-row">
+            <span class="timing-label">Phase 2 (summarize)</span>
+            <div class="timing-track"><div class="timing-fill fill-p2" id="tf-p2" style="width:0"></div></div>
+            <span class="timing-val" id="tv-p2"></span>
+          </div>
+          <div class="timing-row">
+            <span class="timing-label">Phase 3 (RCA)</span>
+            <div class="timing-track"><div class="timing-fill fill-p3" id="tf-p3" style="width:0"></div></div>
+            <span class="timing-val" id="tv-p3"></span>
+          </div>
+          <hr class="sep">
+          <div class="timing-row">
+            <span class="timing-label" style="color:var(--text);font-weight:600">Total</span>
+            <div class="timing-track"><div class="timing-fill fill-total" id="tf-tot" style="width:100%"></div></div>
+            <span class="timing-val" id="tv-tot" style="color:var(--green);font-weight:700"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Phases Re-run button (hidden until Phase 3 completes) -->
+      <div id="phases-rerun-btn" style="display:none;flex-direction:column;align-items:center;gap:8px;padding:8px 0 4px">
+        <button
+          onclick="runPhasesSimulation()"
+          style="background:transparent;border:1px solid var(--border);color:var(--text-dim);padding:8px 20px;border-radius:6px;font-size:13px;cursor:pointer;transition:border-color .15s,color .15s"
+          onmouseover="this.style.borderColor='var(--green)';this.style.color='var(--green)'"
+          onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-dim)'"
+        >↺ Re-run Simulation</button>
+        <span style="font-size:11px;color:var(--text-dim)">Fetches fresh results and restarts the walkthrough</span>
+      </div>
+
+    </main>
+
+    <!-- ══════════════════════════════════════════════════════
+         PIPELINE VIEW — animated orchestration node graph
+         ══════════════════════════════════════════════════════ -->
+    <div class="pipeline-view hidden" id="pipeline-view">
+
+      <!-- Top action bar: Run (pre-sim) and Re-run (post-sim) live here -->
+      <div id="pipeline-top-bar" style="display:flex;align-items:center;justify-content:center;padding:20px 24px 8px;text-align:center">
+
+        <!-- Initial run panel (shown before first simulation) -->
+        <div id="pipeline-run-panel" style="display:flex;flex-direction:column;align-items:center;gap:12px">
+          <h2 style="font-size:18px;color:var(--text)">MI Bridge Simulation</h2>
+          <p style="color:var(--text-dim);max-width:420px;font-size:13px">Watch four AI agents analyse a P1 flash-sale checkout incident in real time.</p>
+          <button class="run-btn" id="run-btn-pipeline" onclick="runPipelineSimulation()">▶ Run Simulation (Dry Run)</button>
+          <p style="font-size:11px;color:var(--text-dim)">No API key required · completes in ~1.5 s</p>
+        </div>
+
+        <!-- Re-run button (shown after simulation completes) -->
+        <div id="pipeline-rerun-btn" style="display:none;flex-direction:column;align-items:center;gap:8px">
+          <button
+            onclick="replayPipelineToCurrentPhase()"
+            style="background:transparent;border:1px solid var(--border);color:var(--text-dim);padding:8px 22px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;transition:border-color .15s,color .15s"
+            onmouseover="this.style.borderColor='var(--blue)';this.style.color='var(--blue)'"
+            onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-dim)'"
+          >↺ Re-run Animation</button>
+        </div>
+
+      </div>
+
+      <div class="pipeline-flow">
+
+        <!-- ── Alert feeder node (always visible — shows incoming event) ── -->
+        <div class="p-node alert-feeder-node" id="pn-alert">
+          <div class="p-node-header" style="background:rgba(248,81,73,.08)">
+            <span class="p-node-tag" style="background:rgba(248,81,73,.18);color:var(--red)">DYNATRACE</span>
+            <span class="p-node-title">Incoming Alert</span>
+            <span class="p-node-status" id="pn-alert-status" style="color:var(--text-dim)">● listening</span>
+          </div>
+          <div class="p-node-tools" id="pn-alert-tools">
+            <div class="p-tool-row feeder-idle" id="feeder-idle-msg">
+              <span class="p-tool-icon">📡</span>
+              <span class="p-tool-text" style="color:var(--text-dim)">Monitoring production — awaiting anomaly…</span>
+            </div>
+          </div>
+          <div class="p-node-result hidden" id="pn-alert-result"></div>
+        </div>
+
+        <div class="connector feeder-connector" id="conn-alert-orch"></div>
+
+        <!-- ── Orchestrator node ── -->
+        <div class="p-node node-idle" id="pn-orch">
+          <div class="p-node-header">
+            <span class="p-node-tag" style="background:rgba(88,166,255,.15);color:var(--blue)">ORCHESTRATOR</span>
+            <span class="p-node-title">Incident Triage</span>
+            <span class="p-node-status" id="pn-orch-status"></span>
+          </div>
+          <div class="p-node-tools" id="pn-orch-tools"></div>
+          <div class="p-node-result hidden" id="pn-orch-result"></div>
+        </div>
+
+        <!-- fork down to Phase 1 parallel agents -->
+        <div class="connector pipe-hidden" id="conn-pre-fork"></div>
+        <div class="pipeline-phase-label pipe-hidden" id="label-phase1">Phase 1 &nbsp;·&nbsp; parallel</div>
+        <div class="connector-fork pipe-hidden" id="conn-fork"></div>
+
+        <!-- ── Phase 1: IMPACT + SIMILAR in parallel ── -->
+        <div class="p-fork pipe-hidden" id="pn-phase1-fork">
+
+          <div class="p-node node-idle" id="pn-impact">
+            <div class="p-node-header">
+              <span class="p-node-tag tag-impact">IMPACT</span>
+              <span class="p-node-title">Impact Analysis</span>
+              <span class="p-node-status" id="pn-impact-status"></span>
+            </div>
+            <div class="p-node-tools" id="pn-impact-tools"></div>
+            <div class="p-node-result hidden" id="pn-impact-result"></div>
+          </div>
+
+          <div class="p-node node-idle" id="pn-similar">
+            <div class="p-node-header">
+              <span class="p-node-tag tag-similar">SIMILAR</span>
+              <span class="p-node-title">Similar Incidents</span>
+              <span class="p-node-status" id="pn-similar-status"></span>
+            </div>
+            <div class="p-node-tools" id="pn-similar-tools"></div>
+            <div class="p-node-result hidden" id="pn-similar-result"></div>
+          </div>
+
+        </div><!-- p-fork -->
+
+        <!-- join back from Phase 1 -->
+        <div class="connector-join pipe-hidden" id="conn-join"></div>
+        <div class="connector pipe-hidden" id="conn-post-join"></div>
+
+        <!-- ── Phase 2: SUMMARIZER ── -->
+        <div class="pipeline-phase-label pipe-hidden" id="label-phase2">Phase 2 &nbsp;·&nbsp; sequential</div>
+        <div class="connector pipe-hidden" id="conn-pre-sum"></div>
+
+        <div class="p-node node-idle pipe-hidden" id="pn-summarizer">
+          <div class="p-node-header">
+            <span class="p-node-tag tag-sum">SUMMARIZER</span>
+            <span class="p-node-title">MI Bridge Summary</span>
+            <span class="p-node-status" id="pn-sum-status"></span>
+          </div>
+          <div class="p-node-tools" id="pn-sum-tools"></div>
+          <div class="p-node-result hidden" id="pn-sum-result"></div>
+        </div>
+
+        <div class="connector pipe-hidden" id="conn-pre-rca"></div>
+
+        <!-- ── Phase 3: RCA ── -->
+        <div class="pipeline-phase-label pipe-hidden" id="label-phase3">Phase 3 &nbsp;·&nbsp; sequential</div>
+        <div class="connector pipe-hidden" id="conn-pre-rca2"></div>
+
+        <div class="p-node node-idle pipe-hidden" id="pn-rca">
+          <div class="p-node-header">
+            <span class="p-node-tag tag-rca">RCA</span>
+            <span class="p-node-title">Root Cause Analysis</span>
+            <span class="p-node-status" id="pn-rca-status"></span>
+          </div>
+          <div class="p-node-tools" id="pn-rca-tools"></div>
+          <div class="p-node-result hidden" id="pn-rca-result"></div>
+        </div>
+
+        <div class="connector pipe-hidden" id="conn-pre-complete"></div>
+
+        <!-- ── Complete node (revealed at end) ── -->
+        <div class="p-node pipe-hidden" id="pn-complete" style="border-color:var(--green)">
+          <div class="p-node-header" style="background:rgba(63,185,80,.07)">
+            <span class="p-node-tag" style="background:rgba(63,185,80,.15);color:var(--green)">✓ COMPLETE</span>
+            <span class="p-node-title">Pipeline Finished</span>
+          </div>
+          <div class="p-node-result" id="pn-complete-result" style="border-top:none"></div>
+        </div>
+
+        <!-- ── Bottom hint (shown after completion, points to Re-run button above) ── -->
+        <div id="pipeline-rerun-hint" style="display:none;padding:16px 0 4px;text-align:center">
+          <span style="font-size:11px;color:var(--text-dim)">To replay the animation, click <strong style="color:var(--text)">↺ Re-run Animation</strong> at the top</span>
+        </div>
+
+      </div><!-- pipeline-flow -->
+    </div><!-- pipeline-view -->
+
+    <!-- ── Log sidebar (hidden on home) ── -->
+    <aside class="log-sidebar hidden" id="log-sidebar">
+      <div class="log-sidebar-header">Agent Activity Log</div>
+      <div id="log-scroll"></div>
+    </aside>
+
+  </div><!-- main-grid -->
+</div><!-- app -->
+
+<script>
+// ─── State ───────────────────────────────────────────────────────────────────
+let _ctx  = null;   // full response from /api/run
+let _phase = 0;     // 0=idle 1=loading 2=p1 3=p2 4=p3  (Phases view step-through)
+let _pipelinePhase = 0; // tracks how many pipeline phases have completed (0/1/2/3)
+let _pipelineAnimating = false; // true while pipeline animation is running
+
+// ─── Source badge colors ─────────────────────────────────────────────────────
+const SOURCE_COLORS = {
+  splunk_logs:    'chip-red',
+  dynatrace_traces:'chip-blue',
+  servicenow_crs: 'chip-amber',
+  past_incidents: 'chip-teal',
+};
+
+// ─── Step label classifier ───────────────────────────────────────────────────
+function stepLabel(text) {
+  const t = text.toUpperCase();
+  if (t.includes('IMMEDIATE')) return ['IMMEDIATE', 'lbl-immediate'];
+  if (t.includes('PARALLEL'))  return ['PARALLEL',  'lbl-parallel'];
+  if (t.includes('POST'))      return ['POST',       'lbl-post'];
+  return [null, null];
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+
+function show(id) { $(id).style.display = ''; $(id).classList.remove('hidden'); }
+function hide(id) { $(id).style.display = 'none'; }
+
+function animateConf(fillId, value) {
+  const el = $(fillId);
+  if (!el) return;
+  setTimeout(() => { el.style.width = (value * 100).toFixed(0) + '%'; }, 80);
+}
+
+function chip(text, cls) {
+  const s = document.createElement('span');
+  s.className = 'chip ' + cls;
+  s.textContent = text;
+  return s;
+}
+
+function sevBadge(rec) {
+  const cls = {ESCALATE:'sev-escalate', MAINTAIN:'sev-maintain', DOWNGRADE:'sev-downgrade'}[rec] || 'sev-maintain';
+  return `<span class="sev-badge ${cls}">${rec}</span>`;
+}
+
+// ─── Simulation ───────────────────────────────────────────────────────────────
+
+/**
+ * Shared API fetch — called by both views independently.
+ * Each view passes its own loading panel element to show/hide.
+ * Returns the parsed JSON result or null on error.
+ */
+async function fetchSimulationData(loadingEl, errorRestoreFn) {
+  loadingEl.style.display = 'flex';
+  try {
+    const resp = await fetch('/api/run', { method: 'POST' });
+    if (!resp.ok) throw new Error(`Server error ${resp.status}`);
+    const data = await resp.json();
+    loadingEl.style.display = 'none';
+    return data;
+  } catch (err) {
+    loadingEl.style.display = 'none';
+    errorRestoreFn();
+    alert('Error running simulation: ' + err.message);
+    return null;
+  }
+}
+
+// ── Pipeline simulation (independent) ────────────────────────────────────────
+async function runPipelineSimulation() {
+  if ($('run-btn-pipeline')) $('run-btn-pipeline').disabled = true;
+  if ($('pipeline-run-panel')) $('pipeline-run-panel').style.display = 'none';
+  if ($('pipeline-rerun-btn')) $('pipeline-rerun-btn').style.display = 'none';
+  if ($('pipeline-rerun-hint')) $('pipeline-rerun-hint').style.display = 'none';
+
+  // Reset pipeline nodes and log
+  _pipelinePhase = 0;
+  $('log-scroll').innerHTML = '';
+  ['pn-orch','pn-impact','pn-similar','pn-summarizer','pn-rca'].forEach(_resetNode);
+  _hideAllPipeElements();
+
+  // Alert feeder animation
+  const alertNode = $('pn-alert');
+  alertNode.classList.remove('feeder-fired');
+  alertNode.classList.add('feeder-listening');
+  $('pn-alert-status').textContent = '● detecting anomaly…';
+  $('pn-alert-status').style.color = 'var(--red)';
+  const alertTools = $('pn-alert-tools');
+  alertTools.innerHTML =
+    `<div class="p-tool-row feeder-idle" id="feeder-idle-msg">
+       <span class="p-tool-icon">📡</span>
+       <span class="p-tool-text" style="color:var(--text-dim)">Monitoring production — awaiting anomaly…</span>
+     </div>`;
+
+  await sleep(600);
+  alertNode.classList.remove('feeder-listening');
+  alertNode.classList.add('feeder-fired');
+  $('pn-alert-status').textContent = '⚡ alert fired';
+  alertTools.innerHTML = '';
+  appendToolRow(alertTools, 'source: dynatrace  ·  severity: P1', true);
+  appendToolRow(alertTools, 'service: inventory-service  ·  error_rate: 42%', true);
+  appendToolRow(alertTools, 'p99_latency: 18,340ms  →  threshold: 500ms', true);
+
+  const alertResult = $('pn-alert-result');
+  alertResult.classList.remove('hidden');
+  alertResult.innerHTML =
+    `<strong style="color:var(--red)">INC-2077-FLASHSALE</strong> · Inventory Service Timeout Cascade<br>` +
+    `<span style="color:var(--text-dim)">Routed to Orchestrator for triage</span>`;
+
+  const feederConn = $('conn-alert-orch');
+  feederConn.classList.add('signal-active');
+  setTimeout(() => feederConn.classList.remove('signal-active'), 700);
+  await sleep(500);
+
+  // Fetch data
+  const data = await fetchSimulationData($('loading-panel'), () => {
+    if ($('pipeline-run-panel')) $('pipeline-run-panel').style.display = 'flex';
+    if ($('run-btn-pipeline'))   $('run-btn-pipeline').disabled = false;
+  });
+  if (!data) return;
+  _ctx = data;
+
+  // Update banner
+  $('banner-dot').style.display = '';
+  $('banner-severity').style.display = '';
+  $('banner-id').textContent = _ctx.alert.incident_id + '  ·  ';
+  $('banner-title').textContent = _ctx.alert.title;
+  const ts = new Date(_ctx.alert.timestamp);
+  $('banner-meta').textContent = ts.toUTCString().slice(0, 25);
+
+  // Run pipeline animation — phases view is untouched
+  runFullPipelineAnimation();
+}
+
+// ── Phases simulation (independent) ──────────────────────────────────────────
+async function runPhasesSimulation() {
+  if ($('run-btn')) $('run-btn').disabled = true;
+  $('run-panel').style.display = 'none';
+  if ($('phases-ready-panel')) $('phases-ready-panel').style.display = 'none';
+  if ($('phases-rerun-btn'))   $('phases-rerun-btn').style.display = 'none';
+
+  // Reset phases sections
+  $('phase1-section').classList.remove('visible');
+  $('phase2-section').classList.remove('visible');
+  $('phase3-section').classList.remove('visible');
+  if ($('timing-section')) $('timing-section').classList.remove('visible');
+  $('log-scroll').innerHTML = '';
+  _phase = 1;
+
+  // Fetch data (phases view uses its own loading overlay inside phases-col)
+  const data = await fetchSimulationData($('phases-loading-panel'), () => {
+    $('run-panel').style.display = '';
+    if ($('run-btn')) $('run-btn').disabled = false;
+    _phase = 0;
+  });
+  if (!data) { _phase = 0; return; }
+  _ctx = data;
+
+  // Update banner
+  $('banner-dot').style.display = '';
+  $('banner-severity').style.display = '';
+  $('banner-id').textContent = _ctx.alert.incident_id + '  ·  ';
+  $('banner-title').textContent = _ctx.alert.title;
+  const ts = new Date(_ctx.alert.timestamp);
+  $('banner-meta').textContent = ts.toUTCString().slice(0, 25);
+
+  // Populate phases feeder bar
+  $('feeder-incident-id').textContent = _ctx.alert.incident_id;
+  const titleShort = (_ctx.alert.title || '').slice(0, 48);
+  $('feeder-title-short').textContent = titleShort + ((_ctx.alert.title || '').length > 48 ? '…' : '');
+  $('feeder-ts').textContent = ts.toUTCString().slice(17, 25) + ' UTC';
+  show('phases-alert-feeder');
+
+  // Show ready panel — pipeline view is untouched
+  _phase = 2;
+  if ($('phases-ready-panel')) $('phases-ready-panel').style.display = 'flex';
+}
+
+/**
+ * Runs the full pipeline node animation end-to-end: Phase 1 → 2 → 3 in sequence.
+ * This only animates the PIPELINE NODES — it does NOT touch _phase, the phases view
+ * cards, or the "Next Phase" buttons. Those remain step-through as before.
+ * The pipeline view always shows the complete animated flow automatically.
+ */
+async function runFullPipelineAnimation() {
+  _pipelineAnimating = true;
+  _pipelinePhase = 0;
+  if ($('pipeline-rerun-btn')) $('pipeline-rerun-btn').style.display = 'none';
+  if ($('pipeline-rerun-hint')) $('pipeline-rerun-hint').style.display = 'none';
+  await renderPipelinePhase1();
+  _pipelinePhase = 1;
+  await sleep(500);    // brief pause between phases so transitions are visible
+  await renderPipelinePhase2();
+  _pipelinePhase = 2;
+  await sleep(500);
+  await renderPipelinePhase3();
+  _pipelinePhase = 3;
+  _pipelineAnimating = false;
+  // Reveal the Re-run button (top) and hint message (bottom)
+  if ($('pipeline-rerun-btn'))  $('pipeline-rerun-btn').style.display = 'flex';
+  if ($('pipeline-rerun-hint')) $('pipeline-rerun-hint').style.display = 'block';
+}
+
+/**
+ * Called when user clicks "Start Phase Walkthrough" in the phases-ready panel.
+ * Hides the ready panel and renders Phase 1 cards.
+ */
+function startPhasesWalkthrough() {
+  if ($('phases-ready-panel')) $('phases-ready-panel').style.display = 'none';
+  // Reset next buttons
+  const p1btn = $('p1-next');
+  if (p1btn) { p1btn.disabled = false; p1btn.textContent = 'Phase 2: MI Summary →'; p1btn.className = 'next-btn'; }
+  const p2btn = $('p2-next');
+  if (p2btn) { p2btn.disabled = false; p2btn.textContent = 'Phase 3: Root Cause Analysis →'; p2btn.className = 'next-btn'; }
+  // Hide phase 2 and 3 sections; clear DOM lists so re-runs don't double-up
+  $('phase2-section').classList.remove('visible');
+  $('phase3-section').classList.remove('visible');
+  ['imp-blast','sim-list','sum-timeline','sum-teams','sum-steps',
+   'rca-causes','rca-crs','rca-evidence','rca-remed'].forEach(id => {
+    const el = $(id); if (el) el.innerHTML = '';
+  });
+  $('log-scroll').innerHTML = '';
+  _phase = 2;
+  renderPhase1();
+  appendLogs([null, 1]);
+}
+
+function nextPhase() {
+  // Pipeline nodes are already animated end-to-end by runFullPipelineAnimation().
+  // nextPhase() only advances the Phases view cards + logs.
+  if (_phase === 2) {
+    $('p1-next').disabled = true;
+    $('p1-next').textContent = '✓ Phase 1 complete';
+    $('p1-next').className = 'phase-done-badge';
+    _phase = 3;
+    renderPhase2();
+    appendLogs([2]);
+  } else if (_phase === 3) {
+    $('p2-next').disabled = true;
+    $('p2-next').textContent = '✓ Phase 2 complete';
+    $('p2-next').className = 'phase-done-badge';
+    _phase = 4;
+    renderPhase3();
+    renderTimings();
+    appendLogs([3]);
+    // Show Re-run button now that all phases are complete
+    if ($('phases-rerun-btn')) $('phases-rerun-btn').style.display = 'flex';
+  }
+}
+
+// ─── Phase renderers ─────────────────────────────────────────────────────────
+
+function renderPhase1() {
+  const ia = _ctx.impact_analysis;
+  const si = _ctx.similar_incidents;
+  const pt = _ctx.phase_timings;
+
+  $('p1-timing').textContent = pt.phase_1 ? pt.phase_1.toFixed(2) + 's' : '';
+
+  // Impact card
+  if (ia) {
+    $('imp-users').textContent = '~' + ia.estimated_users_impacted.toLocaleString();
+    $('imp-revenue').textContent = ia.revenue_impact_per_minute + ' / min';
+
+    const blastEl = $('imp-blast');
+    ia.blast_radius.forEach((svc, i) => {
+      blastEl.appendChild(chip(svc, i === 0 ? 'chip-red' : 'chip-amber'));
+    });
+
+    const pct = Math.round(ia.confidence * 100);
+    $('imp-conf-label').textContent = pct + '%';
+    animateConf('imp-conf-fill', ia.confidence);
+    if (ia.confidence < 0.6) $('imp-conf-fill').classList.add('danger');
+
+    $('imp-sev').innerHTML = sevBadge(ia.severity_recommendation);
+    $('imp-reasoning').textContent = ia.reasoning;
+  }
+
+  // Similar incidents card
+  if (si) {
+    const list = $('sim-list');
+    si.incidents.forEach((inc, i) => {
+      const score = Math.round(inc.similarity_score * 100);
+      const colorClass = score >= 80 ? 'var(--green)' : score >= 50 ? 'var(--amber)' : 'var(--red)';
+      const row = document.createElement('div');
+      row.className = 'incident-row';
+      row.innerHTML = `
+        <span class="inc-rank">#${i+1}</span>
+        <div class="inc-info">
+          <div class="inc-id">${inc.incident_id}</div>
+          <div class="inc-title" title="${inc.title}">${inc.title}</div>
+        </div>
+        <span class="inc-time">${inc.resolution_time_minutes}m</span>
+        <div class="score-bar">
+          <div class="score-track">
+            <div class="score-fill" style="width:0;background:${colorClass}" data-w="${score}"></div>
+          </div>
+          <div style="font-size:10px;text-align:center;color:var(--text-dim);margin-top:2px">${score}%</div>
+        </div>`;
+      list.appendChild(row);
+    });
+    // Animate score bars
+    setTimeout(() => {
+      list.querySelectorAll('.score-fill').forEach(el => {
+        el.style.transition = 'width .8s ease';
+        el.style.width = el.dataset.w + '%';
+      });
+    }, 100);
+    $('sim-runbook').textContent = si.suggested_runbook;
+  }
+
+  $('phase1-section').classList.add('visible');
+}
+
+function renderPhase2() {
+  const ms = _ctx.mi_summary;
+  const pt = _ctx.phase_timings;
+
+  $('p2-timing').textContent = pt.phase_2 ? pt.phase_2.toFixed(2) + 's' : '';
+
+  if (!ms) return;
+
+  $('sum-headline').textContent = ms.headline;
+  $('sum-narrative').textContent = ms.narrative;
+
+  // Timeline
+  const tlEl = $('sum-timeline');
+  const crTime = '12:04';  // CR2077 deploy time visible in timeline
+  ms.timeline.forEach((ev, i) => {
+    const isCR = ev.event && ev.event.includes('CR2077');
+    const isFirst = i === 0;
+    const row = document.createElement('div');
+    row.className = 'tl-row';
+    row.innerHTML = `
+      <span class="tl-time">${ev.time || ''}</span>
+      <div class="tl-dot ${isCR ? 'highlight' : isFirst ? 'active' : ''}"></div>
+      <div class="tl-event ${isCR ? 'highlight' : ''}">${ev.event || ''}</div>`;
+    tlEl.appendChild(row);
+  });
+
+  // Teams
+  const teamsEl = $('sum-teams');
+  ms.teams_to_engage.forEach(t => {
+    const card = document.createElement('div');
+    card.className = 'team-card';
+    card.innerHTML = `
+      <div class="team-name">${t.team || ''}</div>
+      <div class="team-reason">${t.reason || ''}</div>
+      <div class="team-contact">${t.oncall_contact || ''}</div>
+      <span class="slack-pill">${t.slack_channel || ''}</span>`;
+    teamsEl.appendChild(card);
+  });
+
+  // Next steps
+  const stepsEl = $('sum-steps');
+  ms.next_steps.forEach((step, i) => {
+    const [label, cls] = stepLabel(step);
+    const row = document.createElement('div');
+    row.className = 'step-row';
+    row.innerHTML = `
+      <span class="step-num">${i+1}</span>
+      ${label ? `<span class="step-label ${cls}">${label}</span>` : ''}
+      <span style="flex:1;font-size:12px">${step}</span>`;
+    stepsEl.appendChild(row);
+  });
+
+  $('phase2-section').classList.add('visible');
+}
+
+function renderPhase3() {
+  const rca = _ctx.rca;
+  const pt  = _ctx.phase_timings;
+
+  $('p3-timing').textContent = pt.phase_3 ? pt.phase_3.toFixed(2) + 's' : '';
+
+  if (!rca) return;
+
+  // Root causes
+  const causesEl = $('rca-causes');
+  rca.probable_root_causes.forEach(cause => {
+    const isTop = cause.rank === 1;
+    const confPct = cause.confidence_pct || 0;
+    const confColor = confPct >= 80 ? 'var(--red)' : confPct >= 60 ? 'var(--amber)' : 'var(--green)';
+    const row = document.createElement('div');
+    row.className = 'cause-row' + (isTop ? ' top-cause' : '');
+    row.innerHTML = `
+      <div class="cause-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="cause-rank ${isTop ? 'rank1' : ''}">${cause.rank}</span>
+        <span class="cause-text">${cause.cause || ''}</span>
+        <div class="conf-wrap" style="width:140px;flex-shrink:0">
+          <div class="conf-track"><div class="conf-fill" style="width:0;background:${confColor}" data-w="${confPct}"></div></div>
+          <span class="conf-label" style="color:${confColor}">${confPct}%</span>
+        </div>
+      </div>
+      <div class="cause-body">${cause.evidence || ''}</div>`;
+    causesEl.appendChild(row);
+    if (isTop) row.classList.add('open');  // expand top cause by default
+  });
+  // Animate confidence bars inside causes
+  setTimeout(() => {
+    causesEl.querySelectorAll('.conf-fill[data-w]').forEach(el => {
+      el.style.transition = 'width .8s ease';
+      el.style.width = el.dataset.w + '%';
+    });
+  }, 100);
+
+  // Rollback banner
+  if (rca.rollback_candidate) {
+    $('rca-rollback-banner').style.display = 'flex';
+    $('rca-rollback-cr').textContent = rca.rollback_candidate;
+  }
+
+  // Correlated CRs
+  const crsEl = $('rca-crs');
+  rca.correlated_change_requests.forEach(cr => {
+    const isRollback = cr.cr_id === rca.rollback_candidate;
+    const tr = document.createElement('tr');
+    tr.className = isRollback ? 'cr-row-highlight' : 'cr-row-dim';
+    const deployedAt = cr.deployed_at ? cr.deployed_at.replace('T', ' ').slice(0, 16) + ' UTC' : '';
+    tr.innerHTML = `
+      <td><span class="${isRollback ? 'cr-id' : 'cr-id-dim'}">${cr.cr_id}</span>${!isRollback ? '<br><span class="cr-ruled-out">ruled out</span>' : ''}</td>
+      <td style="font-family:monospace;font-size:11px">${cr.service || ''}</td>
+      <td style="font-size:11px;white-space:nowrap">${deployedAt}</td>
+      <td style="font-size:11px">${cr.deployed_by || ''}</td>
+      <td style="font-size:11px">${(cr.description || '').slice(0, 80)}${(cr.description || '').length > 80 ? '…' : ''}</td>`;
+    crsEl.appendChild(tr);
+  });
+
+  // Evidence trail
+  const evEl = $('rca-evidence');
+  rca.evidence_trail.forEach(ev => {
+    const srcClass = SOURCE_COLORS[ev.source] || 'chip-dim';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="white-space:nowrap"><span class="chip ${srcClass}" style="font-size:10px">${(ev.source || '').replace(/_/g,' ')}</span></td>
+      <td style="font-family:monospace;font-size:10px;color:var(--text-dim)">${ev.query_or_action || ''}</td>
+      <td>${ev.finding || ''}</td>`;
+    evEl.appendChild(tr);
+  });
+
+  // Remediation steps
+  const remedEl = $('rca-remed');
+  rca.remediation_steps.forEach((step, i) => {
+    const isFirst = i === 0;
+    const row = document.createElement('div');
+    row.className = 'remed-row';
+    row.innerHTML = `
+      <span class="remed-num">${i+1}.</span>
+      <span class="remed-text">${step}</span>
+      ${isFirst ? `<button class="copy-btn" onclick="copyStep(this, ${JSON.stringify(step)})">copy</button>` : ''}`;
+    remedEl.appendChild(row);
+  });
+
+  $('phase3-section').classList.add('visible');
+}
+
+function renderTimings() {
+  const pt = _ctx.phase_timings;
+  const total = pt.total || (pt.phase_1 + pt.phase_2 + pt.phase_3);
+  const pct = s => total > 0 ? ((s / total) * 100).toFixed(0) + '%' : '33%';
+  const fmt = s => s != null ? s.toFixed(2) + 's' : '';
+
+  $('tv-p1').textContent = fmt(pt.phase_1);
+  $('tv-p2').textContent = fmt(pt.phase_2);
+  $('tv-p3').textContent = fmt(pt.phase_3);
+  $('tv-tot').textContent = fmt(total);
+
+  $('timing-section').classList.add('visible');
+  setTimeout(() => {
+    $('tf-p1').style.transition = 'width 1s ease';
+    $('tf-p2').style.transition = 'width 1s ease';
+    $('tf-p3').style.transition = 'width 1s ease';
+    $('tf-p1').style.width = pct(pt.phase_1);
+    $('tf-p2').style.width = pct(pt.phase_2);
+    $('tf-p3').style.width = pct(pt.phase_3);
+  }, 80);
+}
+
+// ─── Log sidebar ──────────────────────────────────────────────────────────────
+
+function appendLogs(phases) {
+  if (!_ctx || !_ctx.log_entries) return;
+  const scroll = $('log-scroll');
+
+  _ctx.log_entries
+    .filter(e => phases.includes(e.phase))
+    .forEach(e => {
+      const line = document.createElement('div');
+      const isToolCall = e.message.startsWith('[TOOL]');
+      const isComplete = e.message.includes('Complete ✓') || e.message.includes('complete');
+      const isDryRun   = e.message.includes('DRY-RUN');
+      line.className = 'log-line' +
+        (isToolCall ? ' tool-call' : '') +
+        (isComplete ? ' complete'  : '');
+
+      const msgClass = isComplete ? 'complete' : isToolCall ? 'tool' : isDryRun ? 'warning' : '';
+
+      line.innerHTML =
+        `<span class="log-ts">${e.timestamp}</span>` +
+        `<span class="log-agent agent-${e.agent}">${e.agent}</span>` +
+        `<span class="log-msg ${msgClass}">${escHtml(e.message)}</span>`;
+
+      scroll.appendChild(line);
+    });
+
+  scroll.scrollTop = scroll.scrollHeight;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function copyStep(btn, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'copied!';
+    btn.style.color = 'var(--green)';
+    setTimeout(() => { btn.textContent = 'copy'; btn.style.color = ''; }, 2000);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PIPELINE VIEW — helpers, renderers, view switcher
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─── Core helpers ──────────────────────────────────────────────────────────
+
+/** Tiny sleep: await sleep(ms) */
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+/**
+ * Extract [TOOL] log lines for a given agent + phase from _ctx.log_entries.
+ * Returns cleaned strings (prefix stripped).
+ */
+function extractToolCalls(agent, phase) {
+  if (!_ctx || !_ctx.log_entries) return [];
+  return _ctx.log_entries
+    .filter(e => e.agent === agent && e.phase === phase && e.message.startsWith('[TOOL]'))
+    .map(e => e.message.replace('[TOOL] ', '').trim());
+}
+
+/**
+ * Append a single tool-call row into a node's .p-node-tools div.
+ * done=true shows the ✓ immediately (used for instant snap).
+ */
+function appendToolRow(toolsEl, text, done) {
+  const row = document.createElement('div');
+  row.className = 'p-tool-row';
+  row.innerHTML =
+    `<span class="p-tool-icon">${done ? '🔧' : '⏳'}</span>` +
+    `<span class="p-tool-text">${escHtml(text)}</span>` +
+    `<span class="p-tool-check">${done ? '✓' : ''}</span>`;
+  toolsEl.appendChild(row);
+  return row;
+}
+
+/**
+ * Animate a single pipeline node through:
+ *   idle → running (tool calls appear one by one) → complete (result footer shown)
+ *
+ * @param {string}   nodeId    - element id of the .p-node div
+ * @param {string}   statusId  - element id of the .p-node-status span
+ * @param {string[]} toolCalls - array of tool-call label strings
+ * @param {function} resultFn  - called with the result-footer element to fill it in
+ */
+async function animateNode(nodeId, statusId, toolCalls, resultFn) {
+  const node   = $(nodeId);
+  const tools  = node.querySelector('.p-node-tools');
+  const stat   = statusId ? $(statusId) : null;
+
+  // idle → running
+  node.classList.remove('node-idle');
+  node.classList.add('node-running');
+  if (stat) { stat.textContent = '● active'; stat.className = 'p-node-status running'; }
+
+  // Reveal tool calls with staggered delays
+  for (const tc of toolCalls) {
+    await sleep(200);
+    const row = appendToolRow(tools, tc, false);
+    await sleep(300);
+    row.querySelector('.p-tool-icon').textContent = '🔧';
+    row.querySelector('.p-tool-check').textContent = '✓';
+    row.style.color = 'var(--text-dim)';
+  }
+
+  // LLM reasoning step
+  await sleep(200);
+  const llmRow = appendToolRow(tools, 'LLM — reasoning over collected data…', false);
+  await sleep(400);
+  llmRow.querySelector('.p-tool-icon').textContent = '🤖';
+  llmRow.querySelector('.p-tool-check').textContent = '✓';
+  llmRow.style.color = 'var(--text-dim)';
+
+  // running → complete
+  await sleep(160);
+  node.classList.remove('node-running');
+  node.classList.add('node-complete');
+  if (stat) { stat.textContent = '✓ done'; stat.className = 'p-node-status done'; }
+
+  // Show result footer
+  const resultEl = node.querySelector('.p-node-result');
+  if (resultEl) {
+    resultEl.classList.remove('hidden');
+    resultFn(resultEl);
+  }
+}
+
+/**
+ * Instantly set a node to complete state without animation.
+ * Used internally by replayPipelineToCurrentPhase so the reset is clean.
+ */
+function _resetNode(nodeId) {
+  const node = $(nodeId);
+  if (!node) return;
+  node.classList.remove('node-running', 'node-complete');
+  node.classList.add('node-idle');
+  const tools = node.querySelector('.p-node-tools');
+  if (tools) tools.innerHTML = '';
+  const result = node.querySelector('.p-node-result');
+  if (result) result.classList.add('hidden');
+  const stat = node.querySelector('.p-node-status');
+  if (stat) { stat.textContent = ''; stat.className = 'p-node-status'; }
+}
+
+/** Reveal one or more pipeline elements with a fade+slide transition. */
+function revealPipe(...ids) {
+  ids.forEach(id => {
+    const el = $(id);
+    if (!el) return;
+    el.classList.remove('pipe-hidden');
+    // Force reflow so transition fires even if element was just inserted
+    void el.offsetWidth;
+    el.classList.add('pipe-reveal');
+  });
+}
+
+/** Hide all dynamic pipeline elements back to their pre-simulation state. */
+function _hideAllPipeElements() {
+  [
+    'conn-pre-fork','label-phase1','conn-fork','pn-phase1-fork',
+    'conn-join','conn-post-join',
+    'label-phase2','conn-pre-sum','pn-summarizer',
+    'conn-pre-rca','label-phase3','conn-pre-rca2','pn-rca',
+    'conn-pre-complete','pn-complete'
+  ].forEach(id => {
+    const el = $(id);
+    if (!el) return;
+    el.classList.remove('pipe-reveal');
+    el.classList.add('pipe-hidden');
+  });
+  // pn-complete also needs its hidden class restored
+  $('pn-complete').classList.add('hidden');
+  $('pn-complete').classList.remove('node-complete');
+  $('pn-complete-result').innerHTML = '';
+}
+
+// ─── View switcher ──────────────────────────────────────────────────────────
+
+/**
+ * Switch between home / pipeline / phases tabs.
+ */
+function switchView(view) {
+  // Show/hide views
+  $('home-view').classList.toggle('hidden', view !== 'home');
+  $('pipeline-view').classList.toggle('hidden', view !== 'pipeline');
+  $('phases-col-main').classList.toggle('hidden', view !== 'phases');
+
+  // Log sidebar only visible in pipeline and phases views
+  $('log-sidebar').classList.toggle('hidden', view === 'home');
+
+  // Update active tab indicator
+  $('tab-home').classList.toggle('tab-active',     view === 'home');
+  $('tab-pipeline').classList.toggle('tab-active', view === 'pipeline');
+  $('tab-phases').classList.toggle('tab-active',   view === 'phases');
+
+  // If switching to pipeline before simulation, make sure run panel is visible
+  if (view === 'pipeline' && !_ctx && $('pipeline-run-panel')) {
+    $('pipeline-run-panel').style.display = 'flex';
+  }
+}
+
+/**
+ * Reset all pipeline nodes to idle, then animate through all completed phases.
+ * This is the "auto-animate" mode triggered when switching to the Pipeline tab.
+ */
+async function replayPipelineToCurrentPhase() {
+  if (_pipelineAnimating) return;  // guard against double-trigger
+  _pipelineAnimating = true;
+  const replayUpTo = _pipelinePhase; // snapshot: how many pipeline phases completed
+  _pipelinePhase = 0;
+  if ($('pipeline-rerun-btn'))  $('pipeline-rerun-btn').style.display = 'none';
+  if ($('pipeline-rerun-hint')) $('pipeline-rerun-hint').style.display = 'none';
+
+  // Reset all nodes and re-hide all dynamic pipeline elements
+  $('log-scroll').innerHTML = '';
+  ['pn-orch', 'pn-impact', 'pn-similar', 'pn-summarizer', 'pn-rca'].forEach(_resetNode);
+  _hideAllPipeElements();
+
+  // Replay all pipeline phases that had previously completed
+  if (replayUpTo >= 1) { await renderPipelinePhase1(); _pipelinePhase = 1; }
+  if (replayUpTo >= 2) { await sleep(500); await renderPipelinePhase2(); _pipelinePhase = 2; }
+  if (replayUpTo >= 3) { await sleep(500); await renderPipelinePhase3(); _pipelinePhase = 3; }
+
+  _pipelineAnimating = false;
+  // Show Re-run button (top) and hint (bottom) again after replay completes
+  if (_pipelinePhase >= 3) {
+    if ($('pipeline-rerun-btn'))  $('pipeline-rerun-btn').style.display = 'flex';
+    if ($('pipeline-rerun-hint')) $('pipeline-rerun-hint').style.display = 'block';
+  }
+}
+
+// ─── Pipeline phase renderers ───────────────────────────────────────────────
+
+/**
+ * Phase 1: Animate Orchestrator node, then IMPACT + SIMILAR in parallel.
+ */
+async function renderPipelinePhase1() {
+  if (!_ctx) return;
+  const ia = _ctx.impact_analysis;
+  const si = _ctx.similar_incidents;
+
+  // ── Orchestrator node ──
+  const orchTools = $('pn-orch').querySelector('.p-node-tools');
+  $('pn-orch').classList.remove('node-idle');
+  $('pn-orch').classList.add('node-running');
+  $('pn-orch-status').textContent = '● active';
+  $('pn-orch-status').className = 'p-node-status running';
+
+  await sleep(220);
+  appendToolRow(orchTools, 'Alert received: ' + (_ctx.alert?.incident_id || '') + ' [' + (_ctx.alert?.severity || '') + ']', true);
+  await sleep(200);
+  appendToolRow(orchTools, 'Affected: ' + ((_ctx.alert?.affected_services || []).join(', ')), true);
+  await sleep(200);
+  appendToolRow(orchTools, 'Strategy: Phase1=parallel(IMPACT+SIMILAR) → Phase2=SUMMARIZER → Phase3=RCA', true);
+
+  await sleep(180);
+  $('pn-orch').classList.remove('node-running');
+  $('pn-orch').classList.add('node-complete');
+  $('pn-orch-status').textContent = '✓ done';
+  $('pn-orch-status').className = 'p-node-status done';
+  const orchResult = $('pn-orch-result');
+  orchResult.classList.remove('hidden');
+  orchResult.innerHTML =
+    `Dispatching <strong>4 agents</strong> across <strong>3 phases</strong> ` +
+    `<span style="color:var(--cyan)">parallel</span> → <span style="color:var(--purple)">sequential</span> → <span style="color:var(--purple)">sequential</span>`;
+
+  await sleep(260);
+
+  // ── Orchestrator dispatches: reveal the fork + child nodes ──
+  revealPipe('conn-pre-fork', 'label-phase1', 'conn-fork', 'pn-phase1-fork');
+  await sleep(300);
+
+  // ── Phase 1: IMPACT + SIMILAR run concurrently ──
+  await Promise.all([
+    animateNode('pn-impact', 'pn-impact-status', extractToolCalls('IMPACT', 1), el => {
+      if (!ia) return;
+      el.innerHTML =
+        `<strong style="color:var(--red)">${(ia.blast_radius || []).length} services</strong> in blast radius<br>` +
+        `~<strong>${(ia.estimated_users_impacted || 0).toLocaleString()}</strong> users affected<br>` +
+        `Revenue: <strong>${ia.revenue_impact_per_minute || 'N/A'}</strong>/min ` +
+        `· Confidence: <strong>${Math.round((ia.confidence || 0) * 100)}%</strong><br>` +
+        `Severity: <strong style="color:var(--red)">${ia.severity_recommendation || ''}</strong>`;
+    }),
+    animateNode('pn-similar', 'pn-similar-status', extractToolCalls('SIMILAR', 1), el => {
+      if (!si) return;
+      const top = si.top_match || si.incidents?.[0] || {};
+      el.innerHTML =
+        `Top match: <strong style="color:var(--blue)">${top.incident_id || 'N/A'}</strong> ` +
+        `(<strong>${Math.round((top.similarity_score || 0) * 100)}%</strong> similar)<br>` +
+        `Root cause: ${(top.root_cause || '').slice(0, 60)}…<br>` +
+        `Resolved in: <strong>${top.resolution_time_minutes || '?'} min</strong>`;
+    }),
+  ]);
+  appendLogs([null, 1]);
+
+  // ── Phase 1 done: reveal join + path down to Phase 2 ──
+  revealPipe('conn-join', 'conn-post-join', 'label-phase2', 'conn-pre-sum');
+  await sleep(250);
+}
+
+/**
+ * Phase 2: Animate SUMMARIZER node.
+ */
+async function renderPipelinePhase2() {
+  if (!_ctx) return;
+  const ms = _ctx.mi_summary;
+
+  // Reveal SUMMARIZER node just before animating it
+  revealPipe('pn-summarizer');
+  await sleep(250);
+
+  await animateNode('pn-summarizer', 'pn-sum-status', extractToolCalls('SUMMARIZER', 2), el => {
+    if (!ms) return;
+    const h = ms.headline || '';
+    el.innerHTML =
+      `<strong>${h.length > 85 ? h.slice(0, 85) + '…' : h}</strong><br>` +
+      `Teams paged: <strong>${(ms.teams_to_engage || []).length}</strong> ` +
+      `· Next steps: <strong>${(ms.next_steps || []).length}</strong>`;
+  });
+  appendLogs([2]);
+
+  // ── Phase 2 done: reveal connector + path down to Phase 3 ──
+  revealPipe('conn-pre-rca', 'label-phase3', 'conn-pre-rca2');
+  await sleep(250);
+}
+
+/**
+ * Phase 3: Animate RCA node, then reveal the Complete node.
+ */
+async function renderPipelinePhase3() {
+  if (!_ctx) return;
+  const rca = _ctx.rca;
+
+  // Reveal RCA node just before animating it
+  revealPipe('pn-rca');
+  await sleep(250);
+
+  await animateNode('pn-rca', 'pn-rca-status', extractToolCalls('RCA', 3), el => {
+    if (!rca) return;
+    const top = (rca.probable_root_causes || [])[0] || {};
+    const cause = (top.cause || 'Unknown').slice(0, 70);
+    el.innerHTML =
+      `#1: <strong>${cause}${top.cause?.length > 70 ? '…' : ''}</strong><br>` +
+      `Confidence: <strong style="color:var(--red)">${top.confidence_pct || 0}%</strong><br>` +
+      `Rollback: <strong style="color:var(--amber)">${rca.rollback_candidate || 'none identified'}</strong>`;
+  });
+
+  // Reveal connector + Complete node
+  await sleep(320);
+  revealPipe('conn-pre-complete');
+  await sleep(200);
+  $('pn-complete').classList.remove('hidden');
+  revealPipe('pn-complete');
+  $('pn-complete').classList.add('node-complete');
+
+  const pt = _ctx.phase_timings || {};
+  const total = pt.total || ((pt.phase_1 || 0) + (pt.phase_2 || 0) + (pt.phase_3 || 0));
+  const wall  = _ctx.wall_total_seconds || total;
+  $('pn-complete-result').innerHTML =
+    `Rollback candidate: <strong style="color:var(--amber)">${rca?.rollback_candidate || '—'}</strong><br>` +
+    `Phase timings: ` +
+      `<span style="color:var(--cyan)">P1 ${(pt.phase_1 || 0).toFixed(2)}s</span> · ` +
+      `<span style="color:var(--purple)">P2 ${(pt.phase_2 || 0).toFixed(2)}s</span> · ` +
+      `<span style="color:var(--blue)">P3 ${(pt.phase_3 || 0).toFixed(2)}s</span><br>` +
+    `<span style="color:var(--green);font-weight:700">✓ All agents complete · total ${wall.toFixed(2)}s</span>`;
+  appendLogs([3]);
+}
+</script>
+</body>
+</html>
